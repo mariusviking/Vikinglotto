@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#155acb">
+<title>Vikinglotto PRO V10</title>
+<style>
+:root{--bg:#f2f5fa;--card:#fff;--text:#151d31;--muted:#667085;--blue:#2467d1;--green:#147a3d;--red:#a61b1b;--amber:#8a4b00;--line:#d8dee8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1160px;margin:auto;padding:18px 14px 80px}.card{background:var(--card);border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 5px 20px rgba(16,24,40,.07)}
+h1{margin:0 0 12px;font-size:31px}h2{margin:0 0 12px;font-size:21px}.notice{padding:15px;border-radius:16px;background:#e7f5e9;font-weight:750;line-height:1.4}
+.notice.warn{background:#fff4dc;color:#754000}.notice.err{background:#fee9e7;color:#8c1d18}
+textarea{width:100%;min-height:330px;border:1px solid var(--line);border-radius:16px;padding:14px;font-size:16px;line-height:1.42;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px}button{border:0;border-radius:14px;padding:14px 17px;font-size:16px;font-weight:750;background:#e8edf5;color:var(--text)}
+button.primary{background:var(--blue);color:#fff}button.good{background:var(--green);color:#fff}button.dark{background:#61656c;color:#fff}button:disabled{opacity:.45}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{border:1px solid var(--line);background:#f8fafc;border-radius:15px;padding:12px}.stat b{display:block;font-size:25px}
+.small{font-size:13px;color:var(--muted)}.tableWrap{overflow:auto;max-height:68vh;border:1px solid var(--line);border-radius:15px}
+table{width:100%;min-width:1120px;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{position:sticky;top:0;z-index:2;background:#f1f5f9}tr.bad{background:#fff0ee}tr.amb{background:#fff8e7}
+.pill{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:800}.pill.ok{background:#e7f7ec;color:#147a3d}.pill.amb{background:#fff0c8;color:#8a4b00}.pill.bad{background:#fee3e0;color:#981b1b}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f4f6fa;border-radius:7px;padding:2px 5px}
+@media(max-width:720px){h1{font-size:28px}.stats{grid-template-columns:repeat(2,1fr)}.card{padding:15px}.row button{flex:1 1 45%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="card">
+<h1>Vikinglotto PRO V10</h1>
+<div id="status" class="notice">V10 paruošta. Ji skaito ir naujus didėjančia tvarka pateiktus, ir senus nesurūšiuotus tiražus. Pvz. <code>1872432214</code> gali būti išskaidyta į 6 atskirus skaičius, neprarandant senųjų tiražų.</div>
+</section>
+
+<section class="card">
+<h2>1. Įklijuok visą archyvo tekstą</h2>
+<textarea id="src" placeholder="Čia įklijuok Vikinglotto archyvo tekstą..."></textarea>
+<div class="row" style="margin-top:12px">
+<button class="primary" id="parseBtn">VALYTI IR ĮKELTI</button>
+<button class="dark" id="clearBtn">Išvalyti langą</button>
+<button id="testBtn">Įkelti V10 testą</button>
+</div>
+</section>
+
+<section class="card">
+<h2>2. Rezultatas</h2>
+<div class="stats">
+<div class="stat"><b id="found">0</b><span class="small">rasta tiražų</span></div>
+<div class="stat"><b id="valid">0</b><span class="small">tvarkingi</span></div>
+<div class="stat"><b id="review">0</b><span class="small">reikia peržiūros</span></div>
+<div class="stat"><b id="errors">0</b><span class="small">nepilni / klaidos</span></div>
+</div>
+<div class="row" style="margin-top:14px">
+<button class="good" id="csvBtn" disabled>Atsisiųsti CSV</button>
+<button class="good" id="jsonBtn" disabled>Atsisiųsti JSON</button>
+<button id="copyBtn" disabled>Kopijuoti švarius duomenis</button>
+<button id="saveBtn" disabled>Išsaugoti telefone</button>
+<button id="loadBtn">Atkurti iš telefono</button>
+<button class="dark" id="wipeBtn">Ištrinti išsaugotus</button>
+</div>
+<p class="small">Geltonos eilutės reiškia, kad sulipusią seką matematiškai galima suskaidyti keliais būdais. V10 pasirenka tikėtiniausią variantą, bet palieka žymą patikrinimui.</p>
+</section>
+
+<section class="card">
+<div class="tableWrap">
+<table>
+<thead><tr><th>Tiražas</th><th>Data</th><th>6 pagrindiniai</th><th>Papildomi</th><th>Viking / auksinis</th><th>Būsena</th><th>Žalias tekstas</th><th>Pastaba</th></tr></thead>
+<tbody id="tbody"><tr><td colspan="8" class="small">Duomenų dar nėra.</td></tr></tbody>
+</table>
+</div>
+</section>
+</div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let rows=[];
+
+function norm(s){return String(s||'').replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim()}
+function escRe(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function htmlEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function nums(s){return (String(s||'').match(/\d+/g)||[]).map(Number)}
+function uniqueValid(a,count){return a.length===count&&a.every(n=>n>=1&&n<=48)&&new Set(a).size===count}
+function increasing(a){return a.every((n,i)=>i===0||n>a[i-1])}
+function isoDate(s){
+  s=norm(s);
+  let m=s.match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  const months={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+  m=s.toLowerCase().match(/(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)\s+(\d{4})/);
+  return m&&months[m[2]]?`${m[3]}-${String(months[m[2]]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`:'';
+}
+function field(body,label,nextLabels){
+  const re=new RegExp(escRe(label)+'\\s*:?\\s*([\\s\\S]*?)(?='+nextLabels.map(escRe).join('|')+'|$)','i');
+  const m=body.match(re);return m?m[1].trim():'';
+}
+function splitExact(raw,count){
+  const d=String(raw||'').replace(/\D/g,'');
+  const out=[];
+  function walk(pos,a){
+    if(a.length===count){if(pos===d.length)out.push(a.slice());return}
+    const left=count-a.length, rem=d.length-pos;
+    if(rem<left||rem>left*2)return;
+    for(let len=1;len<=2;len++){
+      const p=d.slice(pos,pos+len);
+      if(!p||p[0]==='0')continue;
+      const n=Number(p);
+      if(n<1||n>48||a.includes(n))continue;
+      a.push(n);walk(pos+len,a);a.pop();
+    }
+  }
+  walk(0,[]);
+  return out;
+}
+function candidateScore(a,preferAscending){
+  let s=0;
+  if(increasing(a))s+=preferAscending?500:20;
+  const oneDigits=a.filter(n=>n<10).length;
+  const twoDigits=a.length-oneDigits;
+  s+=Math.min(oneDigits,3)*5+Math.min(twoDigits,5)*3;
+  for(let i=1;i<a.length;i++){
+    const gap=Math.abs(a[i]-a[i-1]);
+    if(gap>35)s-=4;
+  }
+  if(a.some(n=>n===0||n>48))s-=1000;
+  return s;
+}
+function chooseMain(raw,date){
+  const loose=nums(raw);
+  if(uniqueValid(loose,6))return{value:loose,amb:false,count:1,note:''};
+  const c=splitExact(raw,6);
+  if(!c.length)return{value:[],amb:false,count:0,note:'nepavyko išskaidyti į 6 skaičius'};
+  const modern=date && date>='2017-05-24';
+  c.sort((a,b)=>candidateScore(b,modern)-candidateScore(a,modern));
+  return{value:c[0],amb:c.length>1,count:c.length,note:c.length>1?`rasti ${c.length} matematiniai skaidymo variantai`:''};
+}
+function choosePair(raw){
+  const loose=nums(raw);
+  if(uniqueValid(loose,2))return{value:loose,amb:false,count:1};
+  const c=splitExact(raw,2);
+  if(!c.length)return{value:[],amb:false,count:0};
+  c.sort((a,b)=>{
+    let sa=0,sb=0;
+    if(a[0]<10&&a[1]>=10)sa+=3;if(b[0]<10&&b[1]>=10)sb+=3;
+    if(increasing(a))sa+=1;if(increasing(b))sb+=1;
+    return sb-sa;
+  });
+  return{value:c[0],amb:c.length>1,count:c.length};
+}
+function makeRow(draw,date,main,additional,golden,amb,note,source,rawMain){
+  const errors=[];
+  if(!draw)errors.push('nėra tiražo numerio');
+  if(!date)errors.push('nėra datos');
+  if(!uniqueValid(main,6))errors.push('neatpažinti 6 pagrindiniai');
+  if(additional.length&&!uniqueValid(additional,2))errors.push('netvarkingi papildomi');
+  if(golden!==null&&!(golden>=1&&golden<=48))errors.push('netvarkingas Viking/auksinis');
+  return{draw,date,main,additional,golden,amb,error:errors.join('; '),note,source,rawMain};
+}
+function parseLT(text){
+  const blocks=String(text).split(/(?=Tiražas\s+\d+)/gi).filter(x=>/Tiražas\s+\d+/i.test(x));
+  return blocks.map(block=>{
+    const draw=Number((block.match(/Tiražas\s+(\d+)/i)||[])[1]||0);
+    const date=isoDate((block.match(/Žaidimo\s+data\s*:\s*([^\n]+)/i)||[])[1]||block);
+    const mainRaw=field(block,'Pagrindiniai skaičiai',['Papildomi skaičiai','Vikingo skaičius','Auksinis skaičius','Papildomi prizai','Lietuvoje laimėti prizai']);
+    const addRaw=field(block,'Papildomi skaičiai',['Vikingo skaičius','Auksinis skaičius','Papildomi prizai','Lietuvoje laimėti prizai']);
+    let goldRaw=field(block,'Vikingo skaičius',['Papildomi prizai','Lietuvoje laimėti prizai']);
+    if(!goldRaw)goldRaw=field(block,'Auksinis skaičius',['Papildomi prizai','Lietuvoje laimėti prizai']);
+    const m=chooseMain(mainRaw,date),p=addRaw?choosePair(addRaw):{value:[],amb:false,count:0};
+    const g=(nums(goldRaw)[0]??null);
+    const notes=[];
+    if(m.note)notes.push(m.note);
+    if(p.amb)notes.push(`papildomiems rasti ${p.count} variantai`);
+    return makeRow(draw,date,m.value,p.value,g,m.amb||p.amb,notes.join('; '),'LT',mainRaw.replace(/\D/g,''));
+  });
+}
+function parseEN(text){
+  const lines=String(text).split(/\n+/).map(norm).filter(Boolean),out=[];
+  for(let i=0;i<lines.length;i++){
+    const date=isoDate(lines[i]);if(!date)continue;
+    let j=i+1;
+    while(j<lines.length&&j<i+8&&!/^\d{1,4}(?:,\d{3})?$/.test(lines[j]))j++;
+    if(j>=lines.length||j>=i+8)continue;
+    const draw=Number(lines[j].replace(/,/g,''));
+    if(draw<500||draw>9999)continue;
+    const values=[];
+    for(let k=j+1;k<lines.length&&k<j+20&&values.length<7;k++){
+      if(/link|estimated jackpot|choose numbers|logo/i.test(lines[k]))break;
+      if(/^\d{1,2}$/.test(lines[k])){
+        const n=Number(lines[k]);if(n>=1&&n<=48)values.push(n);
+      }
+    }
+    if(values.length===7)out.push(makeRow(draw,date,values.slice(0,6),[],values[6],false,'','EN',values.slice(0,6).join('')));
+  }
+  return out;
+}
+function quality(r){return(r.date?2:0)+(uniqueValid(r.main,6)?10:0)+(r.additional.length===2?2:0)+(r.golden!==null?2:0)-(r.error?10:0)-(r.amb?1:0)}
+function merge(a,b){
+  const map=new Map();
+  [...a,...b].forEach(r=>{
+    if(!r.draw)return;
+    const old=map.get(r.draw);
+    if(!old||quality(r)>quality(old))map.set(r.draw,r);
+  });
+  return[...map.values()].sort((x,y)=>y.draw-x.draw);
+}
+function parseAll(text){return merge(parseLT(text),parseEN(text))}
+function render(){
+  const tb=$('tbody');tb.innerHTML='';let ok=0,rev=0,err=0;
+  rows.forEach(r=>{
+    let cls='',status='';
+    if(r.error){err++;cls='bad';status='<span class="pill bad">Klaida</span>'}
+    else if(r.amb){rev++;cls='amb';status='<span class="pill amb">Patikrinti</span>'}
+    else{ok++;status='<span class="pill ok">Gerai</span>'}
+    const tr=document.createElement('tr');tr.className=cls;
+    tr.innerHTML=`<td>${r.draw||''}</td><td>${htmlEsc(r.date)}</td><td><b>${htmlEsc(r.main.join(' '))}</b></td><td>${htmlEsc(r.additional.join(' '))}</td><td>${r.golden??''}</td><td>${status}</td><td><code>${htmlEsc(r.rawMain||'')}</code></td><td class="small">${htmlEsc(r.error||r.note||r.source)}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!rows.length)tb.innerHTML='<tr><td colspan="8" class="small">Duomenų dar nėra.</td></tr>';
+  $('found').textContent=rows.length;$('valid').textContent=ok;$('review').textContent=rev;$('errors').textContent=err;
+  ['csvBtn','jsonBtn','copyBtn','saveBtn'].forEach(id=>$(id).disabled=!rows.length);
+  const s=$('status');
+  if(!rows.length){s.className='notice warn';s.textContent='Nieko neatpažinta. Įklijuok tekstą su tiražų numeriais ir datomis.'}
+  else if(err){s.className='notice err';s.textContent=`Rasta ${rows.length} tiražų. ${err} eilutės dar nepilnos arba neatpažintos.`}
+  else if(rev){s.className='notice warn';s.textContent=`Rasta ${rows.length} tiražų. ${rev} eilutėse yra keli galimi skaidymo variantai; jos pažymėtos geltonai.`}
+  else{s.className='notice';s.textContent=`Sėkmingai paruošta: ${rows.length} tiražų, klaidų nerasta.`}
+}
+function cleanText(){return rows.slice().sort((a,b)=>a.draw-b.draw).map(r=>`${r.draw};${r.date};${r.main.join(',')};${r.additional.join(',')};${r.golden??''}`).join('\n')}
+function csvText(){
+  const head=['tirazas','data','n1','n2','n3','n4','n5','n6','papildomas1','papildomas2','viking_auksinis','busena','originali_seka','pastaba'];
+  const lines=[head.join(';')];
+  rows.slice().sort((a,b)=>a.draw-b.draw).forEach(r=>{
+    const main=[...r.main,...Array(Math.max(0,6-r.main.length)).fill('')].slice(0,6);
+    const vals=[r.draw,r.date,...main,r.additional[0]||'',r.additional[1]||'',r.golden??'',r.error?'klaida':r.amb?'patikrinti':'gerai',r.rawMain||'',r.error||r.note||''];
+    lines.push(vals.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';'));
+  });
+  return'\ufeff'+lines.join('\n');
+}
+function download(name,data,type){
+  const blob=new Blob([data],{type}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('parseBtn').onclick=()=>{rows=merge(rows,parseAll($('src').value));render();window.scrollTo({top:$('found').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})};
+$('clearBtn').onclick=()=>{$('src').value=''};
+$('testBtn').onclick=()=>{$('src').value=`Tiražas 1739
+Žaidimo data: 2026-07-08
+Pagrindiniai skaičiai:
+1724294448
+Vikingo skaičius:
+2
+Lietuvoje laimėti prizai
+
+Tiražas 597
+Žaidimo data: 2004-08-18
+Pagrindiniai skaičiai:
+1872432214
+Papildomi skaičiai:
+415
+Auksinis skaičius:
+3`};
+$('csvBtn').onclick=()=>download('vikinglotto_svarus_archyvas_V10.csv',csvText(),'text/csv;charset=utf-8');
+$('jsonBtn').onclick=()=>download('vikinglotto_svarus_archyvas_V10.json',JSON.stringify(rows,null,2),'application/json');
+$('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(cleanText());alert('Švarūs duomenys nukopijuoti.')}catch(e){prompt('Nukopijuok rankiniu būdu:',cleanText())}};
+$('saveBtn').onclick=()=>{localStorage.setItem('vikingV10rows',JSON.stringify(rows));alert(`Telefone išsaugota ${rows.length} tiražų.`)};
+$('loadBtn').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem('vikingV10rows')||localStorage.getItem('vikingV9rows')||'[]');rows=merge(rows,saved);render()}catch(e){alert('Išsaugotų duomenų nepavyko perskaityti.')}};
+$('wipeBtn').onclick=()=>{if(confirm('Tikrai ištrinti telefone išsaugotą archyvą?')){['vikingV10rows','vikingV9rows','vikingV8rows','vikingV7rows','vikingV6rows'].forEach(k=>localStorage.removeItem(k));alert('Išsaugotas archyvas ištrintas.')}};
+</script>
+</body>
+</html>
