@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.8.1</title>
+<title>Vikinglotto analizė V16.9</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.8.1</h1>
-<div class="subtitle">V16.8.1 SAFE/MOBILE: V16.6 kontrolė palikta; V16.8.1 3+ klasifikatorius dabar parenka realų TOP 3 kitam traukimui</div>
+<h1>Vikinglotto analizė V16.9</h1>
+<div class="subtitle">V16.9 SAFE/MOBILE: V16.8.1 klasifikatorius paliktas; pridėtas optimistinis 3 bilietų portfelis, leidžiantis kartoti stiprius atraminius skaičius</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -132,9 +132,9 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <section id="recommendations" class="section">
 <div class="grid">
 <div class="card full">
-<h2>V16.8.1 TOP 3 kitam traukimui</h2>
+<h2>V16.9 optimistinis TOP 3 kitam traukimui</h2>
 <div id="v1681Live" class="coverage-note">
-  <b>V16.8.1 dar nepaleistas.</b> Paspausk „Paleisti analizę ir TOP 3“ — programa apmokys 3+ klasifikatorių iš visos iki šiol žinomos istorijos ir palygins jo TOP 3 su V16.6 kontrole.
+  <b>V16.9 dar nepaleistas.</b> Paspausk „Paleisti analizę ir TOP 3“ — programa apmokys 3+ klasifikatorių ir sudarys optimistinį 3 bilietų portfelį: stipriausi skaičiai gali būti sąmoningai kartojami keliuose bilietuose, jeigu jų signalas pakankamai stiprus.
 </div>
 <div id="v1681Top3" style="margin-top:12px"></div>
 <h2 style="margin-top:22px">V16.6 kontrolinis TOP 3</h2>
@@ -313,7 +313,7 @@ function compute(){
  analysis={nums,N,freq,delay,avgGap,maxGap,maps,scores,ranked,pc,tc,sums};
  recommendations=generateRecommendationsV16(DATA,analysis,20);
  renderAll();
- try{v1681RenderLive(v1681FinalPick())}
+ try{v169RenderLive(v169FinalPick())}
  catch(e){console.error(e);const q=$('#v1681Live');if(q)q.innerHTML='<b>V16.8.1 galutinio TOP 3 klaida:</b> '+e.message;}
 }
 function comboQuality(a){
@@ -869,6 +869,61 @@ function renderV168(rows){
   <div class="scroll"><table><thead><tr><th>Segmentas</th><th>Tiražų</th><th>Mokymo pvz.</th><th>3+ Δ</th><th>4+ Δ</th><th>5+ Δ</th><th>6 Δ</th></tr></thead><tbody>${rows.map((r,i)=>r.error?`<tr><td>${i+1}</td><td colspan="6">${r.error}</td></tr>`:`<tr><td><b>${i+1}</b><br><small>${DATA[r.a]?.draw??r.a}–${DATA[r.z-1]?.draw??r.z-1}</small></td><td>${r.n}</td><td>${r.trainN}<br><small>3+: ${r.pos}</small></td>${['three','four','five','six'].map(k=>`<td style="${c(r.d[k])}">${r.d[k]>=0?'+':''}${r.d[k].toFixed(k==='three'||k==='four'?2:3)}%</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
+/* =========================
+   V16.9 – optimistic 3-ticket portfolio
+   Uses the learned V16.8.1 3+ classifier, but no longer forces diversification
+   when the learned candidate field has strong shared anchors.
+   ========================= */
+function v169NumberSupport(ranked){
+  const sup=Object.fromEntries(Array.from({length:48},(_,i)=>[i+1,0]));
+  const top=ranked.slice(0,Math.min(36,ranked.length));
+  let den=0;
+  top.forEach((r,i)=>{const w=Math.max(.01,r.p)*(1-i/(top.length*1.35));den+=w;v168TicketNums(r.t).forEach(n=>sup[n]+=w)});
+  if(den>0)for(let n=1;n<=48;n++)sup[n]/=den;
+  return sup;
+}
+function v169PortfolioScore(sel,support){
+  if(sel.length!==3)return -1e9;
+  const ps=sel.map(x=>x.p), avgP=avg(ps), atLeastOne=1-ps.reduce((q,p)=>q*(1-p),1);
+  let overlap=0;for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)overlap+=v168Overlap(sel[i].t,sel[j].t);
+  const counts={};sel.forEach(r=>v168TicketNums(r.t).forEach(n=>counts[n]=(counts[n]||0)+1));
+  let anchorReward=0,weakRepeat=0;
+  Object.entries(counts).forEach(([n,c])=>{if(c>1){const z=support[+n]||0;anchorReward+=(c-1)*z; if(z<.105)weakRepeat+=(c-1)}});
+  const unique=Object.keys(counts).length;
+  // Optimistic objective: reward both a strong best-ticket chance and several plausible 3+ tickets.
+  // Repetition is rewarded only when it is supported across the learned top candidate field.
+  return 72*atLeastOne + 42*avgP + 150*anchorReward + unique*.65 - overlap*1.8 - weakRepeat*5.5;
+}
+function v169Pick(hist,clf){
+  const m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m);
+  const ranked=pool.map((t,idx)=>{const x=v168Feat(t,m);return {t,p:x?v168Sigmoid(v168Dot(clf.w,x)):0,idx}}).sort((a,b)=>b.p-a.p||a.idx-b.idx);
+  const base=ranked.slice(0,Math.min(42,ranked.length)),support=v169NumberSupport(ranked);
+  let best=null,bestScore=-1e9;
+  // Mobile-safe beam search over learned candidates. Up to 42C3 ≈ 11k portfolios.
+  for(let i=0;i<base.length-2;i++)for(let j=i+1;j<base.length-1;j++)for(let k=j+1;k<base.length;k++){
+    const sel=[base[i],base[j],base[k]];
+    // Still reject near-identical tickets, but allow a strong anchor to live in all three.
+    if(v168Overlap(sel[0].t,sel[1].t)>4||v168Overlap(sel[0].t,sel[2].t)>4||v168Overlap(sel[1].t,sel[2].t)>4)continue;
+    const sc=v169PortfolioScore(sel,support);if(sc>bestScore){bestScore=sc;best=sel}
+  }
+  return {picked:best||base.slice(0,3),support,portfolioScore:bestScore};
+}
+function v169FinalPick(){
+  if(!analysis)throw new Error('Pirmiausia reikia paleisti pagrindinę analizę.');
+  const train=v168TrainingSamples(DATA.length),clf=v168Train(train);
+  if(!clf)throw new Error('Per mažai 3+ mokymo pavyzdžių galutiniam klasifikatoriui.');
+  const r=v169Pick(DATA,clf),control=generateRecommendationsV16(DATA,analysis,20);
+  return {...r,control,trainN:train.length,pos:clf.pos};
+}
+function v169RenderLive(res){
+  const box=$('#v1681Live'),out=$('#v1681Top3');if(!box||!out)return;
+  const counts={};res.picked.forEach(r=>v168TicketNums(r.t).forEach(n=>counts[n]=(counts[n]||0)+1));
+  const anchors=Object.entries(counts).filter(x=>x[1]>=2).sort((a,b)=>(res.support[+b[0]]||0)-(res.support[+a[0]]||0));
+  const anchorText=anchors.length?anchors.map(([n,c])=>`${n} (${c}/3)`).join(', '):'nėra – šį kartą modelis pasirinko platesnį padengimą';
+  box.innerHTML=`<b>V16.9 optimistinis portfelis paruoštas.</b> Mokymo pavyzdžių: <b>${res.trainN}</b>, istorinių 3+ pavyzdžių: <b>${res.pos}</b>.<br>Modelio atraminiai skaičiai portfelyje: <b>${anchorText}</b>.<div class="note">V16.9 nebeišmeta stipraus skaičiaus vien todėl, kad jis jau yra kitame biliete. Kartojimas leidžiamas, kai tas skaičius turi stiprų palaikymą tarp aukščiausiai klasifikatoriaus įvertintų kandidatų. Kartu paliekama apsauga nuo beveik identiškų bilietų.</div>`;
+  out.innerHTML=res.picked.map((r,i)=>{const nums=v168TicketNums(r.t),p=(100*r.p).toFixed(1),shared=nums.filter(n=>(counts[n]||0)>1);return `<div class="rec ${i===0?'gold':i===1?'silver':'bronze'}"><div class="rank">${['🥇 V16.9 – 1 variantas','🥈 V16.9 – 2 variantas','🥉 V16.9 – 3 variantas'][i]}</div><div class="nums" style="margin:14px 0">${balls(nums)}</div><div class="score">${Number(r.t.score||0).toFixed(1)} V16.6 balo</div><div class="why"><span class="tag">✓ 3+ klasifikatoriaus reitingas</span><span class="tag">Santykinis balas ${p}%</span><span class="tag">Atraminiai: ${shared.length?shared.join(', '):'—'}</span></div></div>`}).join('');
+}
+
 function v1681FinalPick(){
   if(!analysis) throw new Error('Pirmiausia reikia paleisti pagrindinę analizę.');
   const train=v168TrainingSamples(DATA.length),clf=v168Train(train);
@@ -966,7 +1021,7 @@ $('#addDrawBtn').onclick=()=>{
  previousRecommendations={forDraw:draw,recs:recommendations,date:new Date().toISOString()};localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));
  DATA.push({draw,date,nums:[...nums].sort((a,b)=>a-b),viking,status:'gerai',note:'Pridėta V15 naršyklėje'});const saved=save();if(!saved){DATA.pop();return fail('Tiražo nepavyko išsaugoti telefone. Patikrink, ar Safari nenaudojamas privačiame režime ir ar leidžiama svetainės saugykla.')}compute();status.className='status ok';status.textContent='Tiražas pridėtas ir išsaugotas telefone ✓ Visa analizė bei TOP 3 perskaičiuoti.';$$('.newNum').forEach(x=>x.value='');$('#newViking').value='';renderPerformance()
 };
-$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V15',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V15_backup.json';a.click()};
+$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V16.9',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V16_9_backup.json';a.click()};
 $('#importData').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);DATA=x.data||x;weights=x.weights||weights;analysisMode=x.analysisMode||'custom';previousRecommendations=x.previousRecommendations||null;save();localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));compute()}catch{alert('Nepavyko perskaityti failo.')}};r.readAsText(f)};
 $('#resetData').onclick=()=>{if(confirm('Ar tikrai atkurti pradinį archyvą?')){DATA=structuredClone(BASE_DATA);previousRecommendations=null;localStorage.removeItem('vikingV13Data');localStorage.removeItem('vikingV12Data');localStorage.removeItem('vikingV13PreviousRecs');localStorage.removeItem('vikingV12PreviousRecs');compute()}};
 $('#applyWeights').onclick=()=>{
