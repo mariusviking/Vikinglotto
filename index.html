@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.1</title>
+<title>Vikinglotto analizė V16.2</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.1</h1>
-<div class="subtitle">V16.1: pataisytas užstrigimas; greitas TOP 3 portfelis ir backtestas paleidžiamas rankiniu būdu</div>
+<h1>Vikinglotto analizė V16.2</h1>
+<div class="subtitle">V16.2 SAFE/MOBILE: puslapis atsidaro be sunkių skaičiavimų; analizė ir TOP 3 paleidžiami rankiniu būdu</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -136,7 +136,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.1 tikslas:</b> parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V15 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.1 tikslas:</b> parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V15 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -568,8 +568,30 @@ $('#rerunBacktest').onclick=()=>{
    finally{btn.disabled=false;btn.textContent='Perskaičiuoti 300 tiražų testą'}
  },50)
 };
-$('#numberSearch').oninput=renderNumbers;$('#sortNumbers').onchange=renderNumbers;$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
+$('#numberSearch').oninput=()=>{if(analysis)renderNumbers()};$('#sortNumbers').onchange=()=>{if(analysis)renderNumbers()};$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
-compute();
+
+// V16.2 SAFE/MOBILE: jokie sunkūs skaičiavimai nevykdomi puslapio atidarymo metu.
+function renderSafeStart(){
+ const last=DATA.at(-1);
+ $('#kpiDraws').textContent=DATA.length;
+ $('#kpiLatest').textContent=last?.draw??'-';
+ $('#kpiDate').textContent=last?.date??'-';
+ $('#kpiConfidence').textContent='—';
+ $('#latestBalls').innerHTML=last?balls(last.nums,last.viking):'';
+ $('#topViking').textContent='—';
+ $('#top3Dashboard').innerHTML='<div class="coverage-note"><b>SAFE režimas.</b> Analizė dar nepaleista. Atverk „TOP 3 variantai“ ir paspausk „Paleisti analizę ir TOP 3“.</div>';
+ $('#top3Full').innerHTML='<div class="coverage-note"><b>V16.2 SAFE/MOBILE.</b> Analizė ir TOP 3 nepaleidžiami automatiškai, kad iPhone Safari neužstrigtų.</div>';
+ $('#backtestCompare').innerHTML='<div class="coverage-note">Backtestas nepaleistas.</div>';
+ $('#newDraw').value=(last?.draw||0)+1;
+ renderHistory();
+ renderWeights();
+ renderPerformance();
+}
+$('#runAnalysis').onclick=()=>{
+ const btn=$('#runAnalysis'); btn.disabled=true; btn.textContent='Skaičiuojama…';
+ setTimeout(()=>{try{compute();btn.textContent='Analizė perskaičiuota ✓'}catch(e){console.error(e);alert('Analizės klaida: '+e.message);btn.textContent='Paleisti analizę ir TOP 3'}finally{btn.disabled=false}},50);
+};
+renderSafeStart();
 </script>
 </body></html>
