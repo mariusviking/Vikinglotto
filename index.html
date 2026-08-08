@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.9</title>
+<title>Vikinglotto analizė V16.9.1</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.9</h1>
-<div class="subtitle">V16.9 SAFE/MOBILE: V16.8.1 klasifikatorius paliktas; pridėtas optimistinis 3 bilietų portfelis, leidžiantis kartoti stiprius atraminius skaičius</div>
+<h1>Vikinglotto analizė V16.9.1</h1>
+<div class="subtitle">V16.9.1 SAFE/MOBILE: V16.9 algoritmas nekeičiamas; pridėtas 300 tiražų portfelio walk-forward A/B/C testas</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -141,7 +141,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8.1 3+ klasifikatorius</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8.1 3+ klasifikatorius</button><button id="runV169PortfolioTest">V16.9.1 portfelio testas</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div><div id="v169PortfolioCompare" style="margin-top:12px"></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -924,6 +924,70 @@ function v169RenderLive(res){
   out.innerHTML=res.picked.map((r,i)=>{const nums=v168TicketNums(r.t),p=(100*r.p).toFixed(1),shared=nums.filter(n=>(counts[n]||0)>1);return `<div class="rec ${i===0?'gold':i===1?'silver':'bronze'}"><div class="rank">${['🥇 V16.9 – 1 variantas','🥈 V16.9 – 2 variantas','🥉 V16.9 – 3 variantas'][i]}</div><div class="nums" style="margin:14px 0">${balls(nums)}</div><div class="score">${Number(r.t.score||0).toFixed(1)} V16.6 balo</div><div class="why"><span class="tag">✓ 3+ klasifikatoriaus reitingas</span><span class="tag">Santykinis balas ${p}%</span><span class="tag">Atraminiai: ${shared.length?shared.join(', '):'—'}</span></div></div>`}).join('');
 }
 
+
+/* =========================
+   V16.9.1 – portfolio walk-forward A/B/C test
+   A: frozen V16.6 control
+   B: V16.8.1 diversified classifier
+   C: V16.9 optimistic shared-anchor portfolio
+   No future draw is used for training/picking.
+   ========================= */
+function v1691PortfolioMetrics(tickets,actual){
+ const a=v168ActualNums(actual),hits=(tickets||[]).map(t=>v168TicketNums(t).filter(n=>a.includes(n)).length);
+ while(hits.length<3)hits.push(0);
+ const winners=hits.filter(h=>h>=3).length,best=Math.max(...hits);
+ return {one3:winners>=1?1:0,two3:winners>=2?1:0,three3:winners>=3?1:0,
+         four:best>=4?1:0,five:best>=5?1:0,six:best>=6?1:0,winners,best};
+}
+function v1691Blank(){return {n:0,one3:0,two3:0,three3:0,four:0,five:0,six:0,winners:0,best:0}}
+function v1691Add(st,m){st.n++;for(const k of ['one3','two3','three3','four','five','six','winners','best'])st[k]+=m[k]}
+function v1691Finish(st){
+ const n=Math.max(1,st.n);
+ return {...st,one3Pct:100*st.one3/n,two3Pct:100*st.two3/n,three3Pct:100*st.three3/n,
+  fourPct:100*st.four/n,fivePct:100*st.five/n,sixPct:100*st.six/n,avgWinners:st.winners/n,avgBest:st.best/n}
+}
+function runV1691PortfolioTest(points=300){
+ const start=Math.max(260,DATA.length-points),A=v1691Blank(),B=v1691Blank(),C=v1691Blank();
+ let clf=null,lastTrain=-999;
+ for(let i=start;i<DATA.length;i++){
+   const hist=DATA.slice(0,i),actual=DATA[i];
+   // Retrain periodically, always using only history strictly before draw i.
+   // This is walk-forward safe and much lighter on iPhone than retraining every draw.
+   if(!clf || i-lastTrain>=12){
+     const train=v168TrainingSamples(i);
+     clf=v168Train(train);
+     lastTrain=i;
+   }
+   if(!clf)continue;
+   const model=buildModelFor(hist,weights);
+   const a=generateRecommendationsV16(hist,model,20);
+   const b=v168Pick(hist,clf).map(x=>x.t);
+   const c=v169Pick(hist,clf).picked.map(x=>x.t);
+   if(a.length<3||b.length<3||c.length<3)continue;
+   v1691Add(A,v1691PortfolioMetrics(a,actual));
+   v1691Add(B,v1691PortfolioMetrics(b,actual));
+   v1691Add(C,v1691PortfolioMetrics(c,actual));
+ }
+ return {A:v1691Finish(A),B:v1691Finish(B),C:v1691Finish(C),points:A.n,retrainEvery:12};
+}
+function renderV1691PortfolioTest(r){
+ const el=$('#v169PortfolioCompare');if(!el)return;
+ const rows=[['V16.6 kontrolė',r.A],['V16.8.1',r.B],['V16.9 optimistinis',r.C]];
+ const bestKey=k=>Math.max(...rows.map(x=>x[1][k]));
+ const cell=(v,k,d=1)=>`<td style="${v===bestKey(k)?'color:#4ade80;font-weight:800':''}">${v.toFixed(d)}${k.endsWith('Pct')?'%':''}</td>`;
+ const gain=r.C.one3Pct-r.B.one3Pct,gain2=r.C.two3Pct-r.B.two3Pct,gain3=r.C.three3Pct-r.B.three3Pct;
+ let verdict='V16.9 NEPAGERINO 3+ PORTFELIO',vc='#f87171';
+ if(gain>0 && (gain2>0||gain3>0)){verdict='V16.9 PORTFELIO IDĖJA PASITEISINO';vc='#4ade80'}
+ else if(gain>0 || gain2>0 || gain3>0){verdict='V16.9 REZULTATAS MIŠRUS';vc='#fbbf24'}
+ el.innerHTML=`<div class="coverage-note"><b>V16.9.1 – 300 tiražų portfelio walk-forward A/B/C testas.</b>
+ Kiekviename taške naudojama tik iki to tiražo buvusi istorija. Lyginami tie patys realūs tiražai: V16.6 kontrolė, V16.8.1 diversifikuotas klasifikatorius ir V16.9 optimistinis bendrų atraminių skaičių portfelis.
+ <div style="font-size:22px;font-weight:850;margin-top:10px;color:${vc}">${verdict}</div>
+ <div class="note">Svarbiausia: ar V16.9 dažniau duoda bent vieną 3+ ir ar padidina atvejus, kai 3+ gauna 2 arba visi 3 bilietai. Žaliai pažymėtas geriausias kiekvieno stulpelio rezultatas. Klasifikatorius atnaujinamas kas ${r.retrainEvery} tiražų, visada tik iš praeities duomenų.</div></div>
+ <div class="scroll"><table><thead><tr><th>Strategija</th><th>Bent 1 bilietas 3+</th><th>Bent 2 bilietai 3+</th><th>Visi 3 bilietai 3+</th><th>Bent 1 bilietas 4+</th><th>5+</th><th>6</th><th>Vid. 3+ bilietų</th></tr></thead><tbody>
+ ${rows.map(([name,x])=>`<tr><td><b>${name}</b></td>${cell(x.one3Pct,'one3Pct')}${cell(x.two3Pct,'two3Pct')}${cell(x.three3Pct,'three3Pct')}${cell(x.fourPct,'fourPct')}${cell(x.fivePct,'fivePct',2)}${cell(x.sixPct,'sixPct',2)}${cell(x.avgWinners,'avgWinners',3)}</tr>`).join('')}
+ </tbody></table></div>
+ <div class="coverage-note" style="margin-top:10px"><b>V16.9 prieš V16.8.1:</b> bent vienas 3+ <b>${gain>=0?'+':''}${gain.toFixed(2)} p.p.</b>, bent du 3+ <b>${gain2>=0?'+':''}${gain2.toFixed(2)} p.p.</b>, visi trys 3+ <b>${gain3>=0?'+':''}${gain3.toFixed(2)} p.p.</b>.</div>`;
+}
 function v1681FinalPick(){
   if(!analysis) throw new Error('Pirmiausia reikia paleisti pagrindinę analizę.');
   const train=v168TrainingSamples(DATA.length),clf=v168Train(train);
@@ -1021,7 +1085,7 @@ $('#addDrawBtn').onclick=()=>{
  previousRecommendations={forDraw:draw,recs:recommendations,date:new Date().toISOString()};localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));
  DATA.push({draw,date,nums:[...nums].sort((a,b)=>a-b),viking,status:'gerai',note:'Pridėta V15 naršyklėje'});const saved=save();if(!saved){DATA.pop();return fail('Tiražo nepavyko išsaugoti telefone. Patikrink, ar Safari nenaudojamas privačiame režime ir ar leidžiama svetainės saugykla.')}compute();status.className='status ok';status.textContent='Tiražas pridėtas ir išsaugotas telefone ✓ Visa analizė bei TOP 3 perskaičiuoti.';$$('.newNum').forEach(x=>x.value='');$('#newViking').value='';renderPerformance()
 };
-$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V16.9',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V16_9_backup.json';a.click()};
+$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V16.9.1',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V16_9_1_backup.json';a.click()};
 $('#importData').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);DATA=x.data||x;weights=x.weights||weights;analysisMode=x.analysisMode||'custom';previousRecommendations=x.previousRecommendations||null;save();localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));compute()}catch{alert('Nepavyko perskaityti failo.')}};r.readAsText(f)};
 $('#resetData').onclick=()=>{if(confirm('Ar tikrai atkurti pradinį archyvą?')){DATA=structuredClone(BASE_DATA);previousRecommendations=null;localStorage.removeItem('vikingV13Data');localStorage.removeItem('vikingV12Data');localStorage.removeItem('vikingV13PreviousRecs');localStorage.removeItem('vikingV12PreviousRecs');compute()}};
 $('#applyWeights').onclick=()=>{
@@ -1068,6 +1132,15 @@ $('#runSegments').onclick=()=>{
 };
 $('#runPrizeFocus').onclick=()=>{const b=$('#runPrizeFocus'),e=$('#prizeFocusCompare');b.disabled=true;b.textContent='3+ testas vyksta…';e.innerHTML='<div class="coverage-note">V16.7 skaičiuoja 3+/4+/5+/6 holdout testą…</div>';setTimeout(()=>{try{renderV167(runV167())}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.7 klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V16.7.1 3+ kontrolė'}},50)};
 $('#runV168').onclick=()=>{const b=$('#runV168'),e=$('#v168Compare');b.disabled=true;b.textContent='V16.8.1 skaičiuoja…';e.innerHTML='<div class="coverage-note">V16.8.1 moko atskirą 3+ klasifikatorių ir vykdo 4 nepriklausomų segmentų holdout testą…</div>';setTimeout(()=>{try{renderV168(runV168())}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.8.1 klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V16.8.1 3+ klasifikatorius'}},50)};
+
+$('#runV169PortfolioTest').onclick=()=>{
+ const b=$('#runV169PortfolioTest'),e=$('#v169PortfolioCompare');
+ b.disabled=true;b.textContent='V16.9.1 testas vyksta…';
+ e.innerHTML='<div class="coverage-note">Skaičiuojamas 300 tiražų A/B/C portfelio walk-forward testas. iPhone gali užtrukti kelias akimirkas.</div>';
+ setTimeout(()=>{try{renderV1691PortfolioTest(runV1691PortfolioTest(300))}
+ catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.9.1 testo klaida: '+x.message+'</div>'}
+ finally{b.disabled=false;b.textContent='V16.9.1 portfelio testas'}},50)
+};
 $('#numberSearch').oninput=()=>{if(analysis)renderNumbers()};$('#sortNumbers').onchange=()=>{if(analysis)renderNumbers()};$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
 
