@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.5</title>
+<title>Vikinglotto analizė V16.6</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.5</h1>
-<div class="subtitle">V16.5 SAFE/MOBILE: V16.3 TOP 3 algoritmas išlaikytas; pridėtas bootstrap statistinio patikimumo testas</div>
+<h1>Vikinglotto analizė V16.6</h1>
+<div class="subtitle">V16.6 SAFE/MOBILE: TOP 3 algoritmas užšaldytas; pridėta nepriklausomų laiko segmentų holdout validacija</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -136,7 +136,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.3 tikslas:</b> parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -593,6 +593,101 @@ function renderBootstrapResult(res){
   </div>
   <div class="scroll"><table><thead><tr><th>Rodiklis</th><th>Bootstrap Δ</th><th>95% intervalas</th><th>P(Δ&gt;0)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+
+function evaluateWeightsBeforeSegment(wts,segmentStart,points=60){
+ const minI=100;
+ const end=Math.max(minI,segmentStart);
+ const begin=Math.max(minI,end-points*4);
+ const idx=[];
+ for(let i=begin;i<end;i+=4)idx.push(i);
+ if(idx.length<12)return {stats:finishStats(blankStats()),score:-1e9};
+ const st=evaluateWeightsWalkForward(wts,idx);
+ return {stats:st,score:v16Objective(st)}
+}
+function chooseWeightsBeforeSegment(segmentStart){
+ const sets=candidateWeightSets();
+ let best={w:{...weights},score:-1e9,stats:null};
+ for(const w of sets){
+  const e=evaluateWeightsBeforeSegment(w,segmentStart,60);
+  if(e.score>best.score)best={w:{...w},score:e.score,stats:e.stats}
+ }
+ return best
+}
+function runChronologicalSegment(startIdx,endIdx,randomRepeats=30){
+ // Griežtas holdout: svoriai kalibruojami tik iš duomenų IKI segmento pradžios.
+ const opt=chooseWeightsBeforeSegment(startIdx),w=opt.w;
+ const modelStats=blankStats(),randomStats=blankStats(),samples=[];
+ for(let i=startIdx;i<endIdx;i++){
+  const hist=DATA.slice(0,i); if(hist.length<80)continue;
+  const model=buildModelFor(hist,w),tickets=generateRecommendationsV16(hist,model,18),actual=DATA[i].nums;
+  if(tickets.length<3)continue;
+  addResult(modelStats,tickets,actual);
+  const mo=oneTicketMetrics(tickets,actual),rnd=[];
+  for(let r=0;r<randomRepeats;r++){
+   const rt=randomThree(); addResult(randomStats,rt,actual); rnd.push(oneTicketMetrics(rt,actual))
+  }
+  const ro=avgObj(rnd);
+  samples.push({
+   any:mo.any-ro.any,two:mo.two-ro.two,three:mo.three-ro.three,
+   best:mo.best-ro.best,coverage:mo.coverage-ro.coverage
+  })
+ }
+ finishStats(modelStats);finishStats(randomStats);
+ return {
+  startIdx,endIdx,tests:modelStats.tests,
+  firstDraw:DATA[startIdx]?.draw??'',lastDraw:DATA[endIdx-1]?.draw??'',
+  model:modelStats,random:randomStats,
+  delta:{
+   any:modelStats.anyPct-randomStats.anyPct,
+   two:modelStats.twoPlusPct-randomStats.twoPlusPct,
+   three:modelStats.threePlusPct-randomStats.threePlusPct,
+   best:modelStats.avgBest-randomStats.avgBest,
+   coverage:modelStats.avgCoverage-randomStats.avgCoverage
+  },
+  weights:w,calibration:opt.stats,samples
+ }
+}
+function runSegmentHoldoutSuite(){
+ const usableStart=Math.max(260,Math.floor(DATA.length*0.20));
+ const usableEnd=DATA.length;
+ const total=usableEnd-usableStart;
+ const blocks=Math.min(4,Math.max(2,Math.floor(total/120)));
+ const size=Math.floor(total/blocks);
+ const rows=[];
+ for(let b=0;b<blocks;b++){
+  const a=usableStart+b*size;
+  const z=b===blocks-1?usableEnd:usableStart+(b+1)*size;
+  rows.push(runChronologicalSegment(a,z,30))
+ }
+ return rows
+}
+function renderSegmentHoldout(rows){
+ const el=$('#segmentCompare'); if(!el)return;
+ const cls=x=>x>0?'color:#4ade80':x<0?'color:#f87171':'color:#94a3b8';
+ const pos=(k)=>rows.filter(r=>r.delta[k]>0).length;
+ const n=rows.length;
+ const coverageWins=pos('coverage'),twoWins=pos('two'),threeWins=pos('three'),anyWins=pos('any');
+ const strict = coverageWins>=Math.ceil(n*.75) && twoWins>=Math.ceil(n*.75);
+ const verdict = strict ? 'STABILESNIS HOLDOUT SIGNALAS'
+               : coverageWins>=Math.ceil(n*.5) && twoWins>=Math.ceil(n*.5) ? 'MIŠRUS / DAR NEPATVIRTINTAS'
+               : 'PRANAŠUMAS NEIŠSILAIKO';
+ const color = strict?'#4ade80':verdict.startsWith('MIŠRUS')?'#fbbf24':'#f87171';
+ const body=rows.map((r,i)=>`<tr>
+  <td><b>${i+1}</b><br><small>${r.firstDraw}–${r.lastDraw}</small></td>
+  <td>${r.tests}</td>
+  <td style="${cls(r.delta.any)}">${r.delta.any>=0?'+':''}${r.delta.any.toFixed(2)}%</td>
+  <td style="${cls(r.delta.two)}">${r.delta.two>=0?'+':''}${r.delta.two.toFixed(2)}%</td>
+  <td style="${cls(r.delta.three)}">${r.delta.three>=0?'+':''}${r.delta.three.toFixed(2)}%</td>
+  <td style="${cls(r.delta.coverage)}">${r.delta.coverage>=0?'+':''}${r.delta.coverage.toFixed(2)}</td>
+ </tr>`).join('');
+ el.innerHTML=`<div class="coverage-note">
+  <b>V16.6 nepriklausomų laiko segmentų holdout testas.</b>
+  Istorija padalijama į ${n} nesikertančius chronologinius segmentus. Kiekvienam segmentui svoriai parenkami tik iš ankstesnių tiražų — pats testuojamas segmentas kalibravimui nenaudojamas.
+  <div style="font-size:22px;font-weight:850;margin-top:10px;color:${color}">${verdict}</div>
+  <div class="note" style="margin-top:8px">Teigiami segmentai: bent 1 — <b>${anyWins}/${n}</b>, 2+ — <b>${twoWins}/${n}</b>, 3+ — <b>${threeWins}/${n}</b>, padengimas — <b>${coverageWins}/${n}</b>. Tai tik istorinis stabilumo patikrinimas, ne būsimo laimėjimo garantija.</div>
+ </div>
+ <div class="scroll"><table><thead><tr><th>Segmentas</th><th>Tiražų</th><th>Bent 1 Δ</th><th>2+ Δ</th><th>3+ Δ</th><th>Padengimo Δ</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
 function modelConfidence(){if(recommendations.length<3)return 0;const spread=recommendations[0].score-recommendations[2].score,top=avg(recommendations.map(x=>x.score));return Math.max(55,Math.min(95,60+spread*2+(top-60)*.5))}
 function vikingRank(){
  const vals=[...new Set(DATA.map(d=>d.viking).filter(Boolean))],last50={},all={},last={};vals.forEach(v=>{last50[v]=0;all[v]=0;last[v]=DATA.length});DATA.forEach((d,i)=>{if(d.viking){all[d.viking]++;last[d.viking]=DATA.length-1-i}});DATA.slice(-50).forEach(d=>{if(d.viking)last50[d.viking]++});
@@ -695,10 +790,21 @@ $('#runBootstrap').onclick=()=>{
  catch(e){console.error(e);if(el)el.innerHTML='<div class="coverage-note">Bootstrap klaida: '+e.message+'</div>'}
  finally{btn.disabled=false;btn.textContent='V16.5 statistinis patikimumas'}},50)
 };
+
+$('#runSegments').onclick=()=>{
+ const btn=$('#runSegments'),el=$('#segmentCompare');
+ btn.disabled=true;btn.textContent='Segmentai tikrinami…';
+ if(el)el.innerHTML='<div class="coverage-note">Vyksta V16.6 nepriklausomų chronologinių segmentų holdout testas. Telefone tai gali užtrukti.</div>';
+ setTimeout(()=>{
+  try{renderSegmentHoldout(runSegmentHoldoutSuite())}
+  catch(e){console.error(e);if(el)el.innerHTML='<div class="coverage-note">V16.6 segmentų testo klaida: '+e.message+'</div>'}
+  finally{btn.disabled=false;btn.textContent='V16.6 segmentų validacija'}
+ },50)
+};
 $('#numberSearch').oninput=()=>{if(analysis)renderNumbers()};$('#sortNumbers').onchange=()=>{if(analysis)renderNumbers()};$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
 
-// V16.5 SAFE/MOBILE: jokie sunkūs skaičiavimai nevykdomi puslapio atidarymo metu.
+// V16.6 SAFE/MOBILE: jokie sunkūs skaičiavimai nevykdomi puslapio atidarymo metu.
 function renderSafeStart(){
  const last=DATA.at(-1);
  $('#kpiDraws').textContent=DATA.length;
