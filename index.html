@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.2</title>
+<title>Vikinglotto analizė V16.3</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.2</h1>
-<div class="subtitle">V16.2 SAFE/MOBILE: puslapis atsidaro be sunkių skaičiavimų; analizė ir TOP 3 paleidžiami rankiniu būdu</div>
+<h1>Vikinglotto analizė V16.3</h1>
+<div class="subtitle">V16.3 SAFE/MOBILE: puslapis atsidaro be sunkių skaičiavimų; analizė ir TOP 3 paleidžiami rankiniu būdu</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -136,7 +136,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.1 tikslas:</b> parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V15 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.3 tikslas:</b> parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -325,62 +325,69 @@ function buildModelFor(source,wts=weights){
  return{nums,N,maps,scores,ranked,sums}
 }
 function candidateSet(model,source,poolSize=18){
- const pool=model.ranked.slice(0,poolSize),mean=avg(model.sums),sd=Math.max(1,std(model.sums)),out=[];
- const a=[];
- function walk(start){
-  if(a.length===6){
-   const s=a.reduce((x,y)=>x+y,0),odd=a.filter(n=>n%2).length,low=a.filter(n=>n<=24).length,rep=a.filter(n=>source.at(-1).nums.includes(n)).length,con=a.slice(1).filter((n,i)=>n-a[i]===1).length;
-   if(s>=mean-1.8*sd&&s<=mean+1.8*sd&&odd>=2&&odd<=4&&low>=2&&low<=4&&rep<=2&&con<=2)out.push({nums:[...a],score:comboQualityWith(a,model,source)});
-   return
-  }
-  for(let i=start;i<=pool.length-(6-a.length);i++){a.push(pool[i]);a.sort((x,y)=>x-y);walk(i+1);a.pop()}
+ // V16.3: platesnis skaičių laukas, bet nebrangus deterministinis kandidatų mėginys.
+ // Tikslas – neleisti TOP 3 susispausti vien tik į tuos pačius 10–12 aukščiausiai reitinguotų skaičių.
+ const pool=model.ranked.slice(0,Math.min(32,model.ranked.length));
+ const mean=avg(model.sums),sd=Math.max(1,std(model.sums)),out=[],seen=new Set();
+ let seed=((source.length+1)*2654435761)>>>0;
+ function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+ function accept(c){
+  c=[...new Set(c)].sort((a,b)=>a-b); if(c.length!==6)return;
+  const key=c.join('-');if(seen.has(key))return;
+  const sum=c.reduce((a,b)=>a+b,0),odd=c.filter(n=>n%2).length,low=c.filter(n=>n<=24).length;
+  const rep=c.filter(n=>source.at(-1).nums.includes(n)).length,con=c.slice(1).filter((n,i)=>n-c[i]===1).length;
+  if(sum<mean-2.15*sd||sum>mean+2.15*sd||odd<2||odd>4||low<2||low>4||rep>2||con>2)return;
+  seen.add(key);out.push({nums:c,score:comboQualityWith(c,model,source)})
  }
- // Use combinations by pool index to avoid mutation-order issues
- function rec(pos,chosen){
-  if(chosen.length===6){
-   const c=[...chosen].sort((x,y)=>x-y),s=c.reduce((x,y)=>x+y,0),odd=c.filter(n=>n%2).length,low=c.filter(n=>n<=24).length,rep=c.filter(n=>source.at(-1).nums.includes(n)).length,con=c.slice(1).filter((n,i)=>n-c[i]===1).length;
-   if(s>=mean-1.8*sd&&s<=mean+1.8*sd&&odd>=2&&odd<=4&&low>=2&&low<=4&&rep<=2&&con<=2)out.push({nums:c,score:comboQualityWith(c,model,source)});return
-  }
-  for(let i=pos;i<=pool.length-(6-chosen.length);i++)rec(i+1,[...chosen,pool[i]])
+ // 1) Stiprūs kandidatai iš viršutinės reitingo dalies.
+ for(let shift=0;shift<18;shift++){
+  const c=[];for(let j=0;j<6;j++)c.push(pool[(shift+j*3)%Math.min(22,pool.length)]);accept(c)
  }
- rec(0,[]);return out.sort((x,y)=>y.score-x.score)
+ // 2) Platesnis deterministinis mėginys. Aukštesni reitingai vis dar dažnesni,
+ // tačiau 20–32 vietos gali patekti į bilietą ir padidinti portfelio padengimą.
+ for(let k=0;k<1800;k++){
+  const c=[],used=new Set();let guard=0;
+  while(c.length<6&&guard++<80){
+   const u=rnd(),idx=Math.min(pool.length-1,Math.floor(Math.pow(u,1.45)*pool.length));
+   const n=pool[idx];if(!used.has(n)){used.add(n);c.push(n)}
+  }
+  accept(c)
+ }
+ return out.sort((a,b)=>b.score-a.score)
 }
-
 function overlapCount(a,b){return a.filter(n=>b.includes(n)).length}
 function portfolioUtility(sel){
  if(!sel.length)return -1e9;
  const unique=new Set(sel.flatMap(x=>x.nums)).size;
- let overlap=0;
- for(let i=0;i<sel.length;i++)for(let j=i+1;j<sel.length;j++)overlap+=overlapCount(sel[i].nums,sel[j].nums);
+ let overlap=0;for(let i=0;i<sel.length;i++)for(let j=i+1;j<sel.length;j++)overlap+=overlapCount(sel[i].nums,sel[j].nums);
  const quality=avg(sel.map(x=>x.score));
- // V16: kokybė + reali diversifikacija. 18 unikalių pozicijų yra idealas.
- return quality + unique*2.15 - overlap*4.25;
+ // V16.3: 16–18 skirtingų skaičių portfelyje vertinami daug stipriau nei kosmetinis vieno bilieto balas.
+ return quality + unique*4.8 - overlap*8.5;
 }
 function selectPortfolioV16(candidates,count=3){
- const base=candidates.slice(0,Math.min(120,candidates.length));
- if(base.length<=count)return base.slice(0,count);
- const selected=[];
- // Greedy + look-ahead: pirmiausia kokybė, vėliau stipriai baudžiame dubliavimą.
- while(selected.length<count){
-  let best=null,bestU=-1e9;
-  for(const c of base){
-   if(selected.includes(c))continue;
-   const overlaps=selected.map(x=>overlapCount(c.nums,x.nums));
-   const maxOverlap=overlaps.length?Math.max(...overlaps):0;
-   if(maxOverlap>2)continue;
-   const trial=[...selected,c];
-   const unique=new Set(trial.flatMap(x=>x.nums)).size;
-   const ov=overlaps.reduce((x,y)=>x+y,0);
-   const u=c.score + unique*1.8 - ov*5.0;
-   if(u>bestU){bestU=u;best=c}
+ const base=candidates.slice(0,Math.min(260,candidates.length));if(base.length<=count)return base.slice(0,count);
+ let best=null,bestU=-1e9;
+ // Pirmą bilietą bandome iš stipriausių 24; antrą/trečią renkame dėl kokybės IR padengimo.
+ for(const first of base.slice(0,24)){
+  const sel=[first];
+  while(sel.length<count){
+   let pick=null,pickU=-1e9;
+   for(const c of base){
+    if(sel.includes(c))continue;
+    const ovs=sel.map(x=>overlapCount(c.nums,x.nums));
+    // V16.3 pageidauja <=1 bendro skaičiaus; <=2 leidžiama tik jei kito varianto nėra.
+    if(ovs.some(x=>x>1))continue;
+    const trial=[...sel,c],u=portfolioUtility(trial);
+    if(u>pickU){pickU=u;pick=c}
+   }
+   if(!pick){
+    for(const c of base){if(sel.includes(c))continue;const ovs=sel.map(x=>overlapCount(c.nums,x.nums));if(ovs.some(x=>x>2))continue;const u=portfolioUtility([...sel,c]);if(u>pickU){pickU=u;pick=c}}
+   }
+   if(!pick)break;sel.push(pick)
   }
-  if(!best){
-   best=base.find(c=>!selected.includes(c));
-   if(!best)break
-  }
-  selected.push(best)
+  if(sel.length===count){const u=portfolioUtility(sel);if(u>bestU){bestU=u;best=sel}}
  }
- return selected.slice(0,count)
+ return (best||base.slice(0,count)).slice(0,count)
 }
 function generateRecommendationsV16(source=DATA,model=analysis,poolSize=20){
  return selectPortfolioV16(candidateSet(model,source,poolSize),3)
@@ -415,7 +422,7 @@ function finishStats(stats){
 }
 function v16Objective(s){
  // Pirmenybė: portfelio padengimas ir 2+/3+, ne kosmetinis modelio balas.
- return s.avgCoverage*4.0+s.avgBest*2.2+s.twoPlusPct*.055+s.threePlusPct*.11+s.anyPct*.012
+ return s.avgCoverage*5.5+s.avgBest*2.0+s.twoPlusPct*.07+s.threePlusPct*.14+s.anyPct*.01
 }
 function candidateWeightSets(){
  const b={...weights};
@@ -561,7 +568,7 @@ $$('[data-mode]').forEach(el=>el.onclick=()=>setMode(el.dataset.mode));
 $('#rerunBacktest').onclick=()=>{
  const btn=$('#rerunBacktest'),el=$('#backtestCompare');
  btn.disabled=true;btn.textContent='Skaičiuojama…';
- if(el)el.innerHTML='<div class="coverage-note">Vyksta V16.1 walk-forward skaičiavimas…</div>';
+ if(el)el.innerHTML='<div class="coverage-note">Vyksta V16.3 walk-forward skaičiavimas…</div>';
  setTimeout(()=>{
    try{backtestResult=runBacktest(300,20);renderBacktest()}
    catch(e){console.error(e);if(el)el.innerHTML='<div class="coverage-note">Backtesto klaida: '+e.message+'</div>'}
@@ -571,7 +578,7 @@ $('#rerunBacktest').onclick=()=>{
 $('#numberSearch').oninput=()=>{if(analysis)renderNumbers()};$('#sortNumbers').onchange=()=>{if(analysis)renderNumbers()};$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
 
-// V16.2 SAFE/MOBILE: jokie sunkūs skaičiavimai nevykdomi puslapio atidarymo metu.
+// V16.3 SAFE/MOBILE: jokie sunkūs skaičiavimai nevykdomi puslapio atidarymo metu.
 function renderSafeStart(){
  const last=DATA.at(-1);
  $('#kpiDraws').textContent=DATA.length;
@@ -581,7 +588,7 @@ function renderSafeStart(){
  $('#latestBalls').innerHTML=last?balls(last.nums,last.viking):'';
  $('#topViking').textContent='—';
  $('#top3Dashboard').innerHTML='<div class="coverage-note"><b>SAFE režimas.</b> Analizė dar nepaleista. Atverk „TOP 3 variantai“ ir paspausk „Paleisti analizę ir TOP 3“.</div>';
- $('#top3Full').innerHTML='<div class="coverage-note"><b>V16.2 SAFE/MOBILE.</b> Analizė ir TOP 3 nepaleidžiami automatiškai, kad iPhone Safari neužstrigtų.</div>';
+ $('#top3Full').innerHTML='<div class="coverage-note"><b>V16.3 SAFE/MOBILE.</b> Analizė ir TOP 3 nepaleidžiami automatiškai, kad iPhone Safari neužstrigtų.</div>';
  $('#backtestCompare').innerHTML='<div class="coverage-note">Backtestas nepaleistas.</div>';
  $('#newDraw').value=(last?.draw||0)+1;
  renderHistory();
