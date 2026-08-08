@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V16.8</title>
+<title>Vikinglotto analizė V16.8.1</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V16.8</h1>
-<div class="subtitle">V16.8 SAFE/MOBILE: V16.6 kontrolė užšaldyta; pridėtas atskiras 3+ klasifikavimo sluoksnis ir nepriklausoma holdout validacija</div>
+<h1>Vikinglotto analizė V16.8.1</h1>
+<div class="subtitle">V16.8.1 SAFE/MOBILE: V16.6 kontrolė palikta; V16.8.1 3+ klasifikatorius dabar parenka realų TOP 3 kitam traukimui</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -132,11 +132,16 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <section id="recommendations" class="section">
 <div class="grid">
 <div class="card full">
-<h2>TOP 3 modelio variantai kitam traukimui</h2>
+<h2>V16.8.1 TOP 3 kitam traukimui</h2>
+<div id="v1681Live" class="coverage-note">
+  <b>V16.8.1 dar nepaleistas.</b> Paspausk „Paleisti analizę ir TOP 3“ — programa apmokys 3+ klasifikatorių iš visos iki šiol žinomos istorijos ir palygins jo TOP 3 su V16.6 kontrole.
+</div>
+<div id="v1681Top3" style="margin-top:12px"></div>
+<h2 style="margin-top:22px">V16.6 kontrolinis TOP 3</h2>
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8 3+ klasifikatorius</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8.1 3+ klasifikatorius</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -308,6 +313,8 @@ function compute(){
  analysis={nums,N,freq,delay,avgGap,maxGap,maps,scores,ranked,pc,tc,sums};
  recommendations=generateRecommendationsV16(DATA,analysis,20);
  renderAll();
+ try{v1681RenderLive(v1681FinalPick())}
+ catch(e){console.error(e);const q=$('#v1681Live');if(q)q.innerHTML='<b>V16.8.1 galutinio TOP 3 klaida:</b> '+e.message;}
 }
 function comboQuality(a){
  return comboQualityWith(a,analysis,DATA)
@@ -793,9 +800,11 @@ function v168Train(samples){
   return {w,pos,neg,pw};
 }
 function v168CandidatePool(hist, model){
-  // Use the existing V16 generator as the candidate source; classifier only re-ranks.
-  let a=generateRecommendationsV16(hist,model,90);
-  return Array.isArray(a)?a:[];
+  // V16.8.1: V16.6 scoring/generator logic stays intact, but the classifier must see
+  // a genuine candidate field BEFORE it is compressed to the final 3-ticket portfolio.
+  // This allows the 3+ layer to choose different tickets rather than merely reorder V16.6 TOP 3.
+  let a=candidateSet(model,hist,90);
+  return Array.isArray(a)?a.slice(0,90):[];
 }
 function v168TrainingSamples(end){
   const samples=[],start=Math.max(100,end-420);
@@ -853,12 +862,42 @@ function renderV168(rows){
   const el=$('#v168Compare'),good=rows.filter(r=>!r.error),c=x=>x>0?'color:#4ade80':x<0?'color:#f87171':'color:#94a3b8';
   const w3=good.filter(r=>r.d.three>0).length,w4=good.filter(r=>r.d.four>0).length;
   const avg3=good.length?good.reduce((a,r)=>a+r.d.three,0)/good.length:0;
-  let verdict='3+ KLASIFIKATORIUS NEPATVIRTINTAS',vc='#f87171';
-  if(good.length===4 && w3>=3 && avg3>0){verdict='STABILESNIS V16.8 3+ SIGNALAS';vc='#4ade80'}
-  else if(w3>=2 && avg3>0){verdict='MIŠRUS V16.8 3+ SIGNALAS';vc='#fbbf24'}
-  el.innerHTML=`<div class="coverage-note"><b>V16.8 – atskiras 3+ klasifikatorius.</b> V16.6 kandidatų generatorius nekeičiamas. Naujas sluoksnis mokomas atskirti bilietus, kurie istorijoje pasiekė <b>3+</b>, nuo 0–2 ir tik perrikiuoja kandidatus. Kiekvieno holdout segmento klasifikatorius mokomas tik iš ankstesnių tiražų; pats testuojamas segmentas mokymui nenaudojamas.<div style="font-size:22px;font-weight:850;margin-top:10px;color:${vc}">${verdict}</div><div class="note">3+ teigiamas <b>${w3}/${good.length}</b> segmentų; 4+ — <b>${w4}/${good.length}</b>; vidutinis 3+ Δ: <b style="${c(avg3)}">${avg3>=0?'+':''}${avg3.toFixed(2)}%</b>. Tai istorinis testas, ne būsimo laimėjimo garantija.</div></div>
+  let verdict='V16.8.1 3+ KLASIFIKATORIUS NEPATVIRTINTAS',vc='#f87171';
+  if(good.length===4 && w3>=3 && avg3>0){verdict='STABILESNIS V16.8.1 3+ SIGNALAS';vc='#4ade80'}
+  else if(w3>=2 && avg3>0){verdict='MIŠRUS V16.8.1 3+ SIGNALAS';vc='#fbbf24'}
+  el.innerHTML=`<div class="coverage-note"><b>V16.8.1 – atskiras 3+ klasifikatorius.</b> V16.6 skaičių vertinimas nekeičiamas; klasifikatorius tik perrikiuoja platesnį V16.6 kandidatų lauką prieš galutinį TOP 3 pasirinkimą. Naujas sluoksnis mokomas atskirti bilietus, kurie istorijoje pasiekė <b>3+</b>, nuo 0–2 ir tik perrikiuoja kandidatus. Kiekvieno holdout segmento klasifikatorius mokomas tik iš ankstesnių tiražų; pats testuojamas segmentas mokymui nenaudojamas.<div style="font-size:22px;font-weight:850;margin-top:10px;color:${vc}">${verdict}</div><div class="note">3+ teigiamas <b>${w3}/${good.length}</b> segmentų; 4+ — <b>${w4}/${good.length}</b>; vidutinis 3+ Δ: <b style="${c(avg3)}">${avg3>=0?'+':''}${avg3.toFixed(2)}%</b>. Tai istorinis testas, ne būsimo laimėjimo garantija.</div></div>
   <div class="scroll"><table><thead><tr><th>Segmentas</th><th>Tiražų</th><th>Mokymo pvz.</th><th>3+ Δ</th><th>4+ Δ</th><th>5+ Δ</th><th>6 Δ</th></tr></thead><tbody>${rows.map((r,i)=>r.error?`<tr><td>${i+1}</td><td colspan="6">${r.error}</td></tr>`:`<tr><td><b>${i+1}</b><br><small>${DATA[r.a]?.draw??r.a}–${DATA[r.z-1]?.draw??r.z-1}</small></td><td>${r.n}</td><td>${r.trainN}<br><small>3+: ${r.pos}</small></td>${['three','four','five','six'].map(k=>`<td style="${c(r.d[k])}">${r.d[k]>=0?'+':''}${r.d[k].toFixed(k==='three'||k==='four'?2:3)}%</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
+
+function v1681FinalPick(){
+  if(!analysis) throw new Error('Pirmiausia reikia paleisti pagrindinę analizę.');
+  const train=v168TrainingSamples(DATA.length),clf=v168Train(train);
+  if(!clf) throw new Error('Per mažai 3+ mokymo pavyzdžių galutiniam klasifikatoriui.');
+  const picked=v168Pick(DATA,clf);
+  const control=generateRecommendationsV16(DATA,analysis,20);
+  return {picked,control,trainN:train.length,pos:clf.pos};
+}
+function v1681RenderLive(res){
+  const box=$('#v1681Live'),out=$('#v1681Top3');
+  if(!box||!out)return;
+  const ctrlKeys=new Set(res.control.map(x=>v168TicketNums(x).join('-')));
+  const changed=res.picked.filter(x=>!ctrlKeys.has(v168TicketNums(x.t).join('-'))).length;
+  box.innerHTML=`<b>V16.8.1 galutinis 3+ klasifikatorius apmokytas.</b>
+  Mokymo pavyzdžių: <b>${res.trainN}</b>, istorinių 3+ teigiamų pavyzdžių: <b>${res.pos}</b>.
+  Iš trijų V16.8.1 bilietų <b>${changed}/3</b> skiriasi nuo V16.6 kontrolinio TOP 3.
+  <div class="note">Klasifikatorius nekeičia loterijos matematinių tikimybių. Jis tik perrikiuoja V16.6 sugeneruotą kandidatų lauką pagal istorijoje išmoktą 3+ profilį.</div>`;
+  out.innerHTML=res.picked.map((r,i)=>{
+    const t=r.t, nums=v168TicketNums(t);
+    const p=(100*r.p).toFixed(1);
+    return `<div class="rec ${i===0?'gold':i===1?'silver':'bronze'}">
+      <div class="rank">${['🥇 V16.8.1 – 1 variantas','🥈 V16.8.1 – 2 variantas','🥉 V16.8.1 – 3 variantas'][i]}</div>
+      <div class="nums" style="margin:14px 0">${balls(nums)}</div>
+      <div class="score">${Number(t.score||0).toFixed(1)} V16.6 balo</div>
+      <div class="why"><span class="tag">✓ 3+ klasifikatoriaus reitingas</span><span class="tag">Santykinis klasifikatoriaus balas ${p}%</span></div>
+    </div>`;
+  }).join('');
+}
+
 function modelConfidence(){if(recommendations.length<3)return 0;const spread=recommendations[0].score-recommendations[2].score,top=avg(recommendations.map(x=>x.score));return Math.max(55,Math.min(95,60+spread*2+(top-60)*.5))}
 function vikingRank(){
  const vals=[...new Set(DATA.map(d=>d.viking).filter(Boolean))],last50={},all={},last={};vals.forEach(v=>{last50[v]=0;all[v]=0;last[v]=DATA.length});DATA.forEach((d,i)=>{if(d.viking){all[d.viking]++;last[d.viking]=DATA.length-1-i}});DATA.slice(-50).forEach(d=>{if(d.viking)last50[d.viking]++});
@@ -973,7 +1012,7 @@ $('#runSegments').onclick=()=>{
  },50)
 };
 $('#runPrizeFocus').onclick=()=>{const b=$('#runPrizeFocus'),e=$('#prizeFocusCompare');b.disabled=true;b.textContent='3+ testas vyksta…';e.innerHTML='<div class="coverage-note">V16.7 skaičiuoja 3+/4+/5+/6 holdout testą…</div>';setTimeout(()=>{try{renderV167(runV167())}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.7 klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V16.7.1 3+ kontrolė'}},50)};
-$('#runV168').onclick=()=>{const b=$('#runV168'),e=$('#v168Compare');b.disabled=true;b.textContent='V16.8 skaičiuoja…';e.innerHTML='<div class="coverage-note">V16.8 moko atskirą 3+ klasifikatorių ir vykdo 4 nepriklausomų segmentų holdout testą…</div>';setTimeout(()=>{try{renderV168(runV168())}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.8 klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V16.8 3+ klasifikatorius'}},50)};
+$('#runV168').onclick=()=>{const b=$('#runV168'),e=$('#v168Compare');b.disabled=true;b.textContent='V16.8.1 skaičiuoja…';e.innerHTML='<div class="coverage-note">V16.8.1 moko atskirą 3+ klasifikatorių ir vykdo 4 nepriklausomų segmentų holdout testą…</div>';setTimeout(()=>{try{renderV168(runV168())}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V16.8.1 klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V16.8.1 3+ klasifikatorius'}},50)};
 $('#numberSearch').oninput=()=>{if(analysis)renderNumbers()};$('#sortNumbers').onchange=()=>{if(analysis)renderNumbers()};$('#historySearch').oninput=renderHistory;$('#historyLimit').onchange=renderHistory;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
 
