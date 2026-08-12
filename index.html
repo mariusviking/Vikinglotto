@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V17</title>
+<title>Vikinglotto analizė V17.0.1 FAST</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V17</h1>
-<div class="subtitle">V17 PORTFOLIO LAB: V16.8.1 bazė + bendras 3 bilietų optimizavimas — mažesnis dubliavimas, 3+ / 4+ tikslai ir 300 / 500 / 800 / MAX walk-forward patikra</div>
+<h1>Vikinglotto analizė V17.0.1 FAST</h1>
+<div class="subtitle">V17.0.1 FAST: tas pats V17 portfelio algoritmas, bet pašalinti paslėpti sunkūs perskaičiavimai ir pridėtas walk-forward talpinimas į atmintį (cache)</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -177,7 +177,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="card wide"><h3>Analizės svoriai</h3><div id="weightsBox"></div><button class="primary" id="applyWeights">Taikyti rankinius svorius</button></div>
 <div class="card side"><h3>Kaip tai suprasti</h3>
 <p class="note"><b>Režimas nėra loterijos tikimybės pakeitimas.</b> Visos galiojančios kombinacijos išlieka vienodai tikėtinos. Režimai tik pakeičia, kokius istorinius požymius programa labiau vertina sudarydama TOP 3.</p>
-<p class="note">„Istorinis AUTO“ naudoja iki 80 ankstesnių patikrinimo taškų. Skaičiavimas telefone gali užtrukti kelias sekundes.</p>
+<p class="note">„Istorinis AUTO“ naudoja iki 80 ankstesnių patikrinimo taškų. V17.0.1 FAST versijoje pašalintas paslėptas sunkus perskaičiavimas po AUTO kalibravimo.</p>
 <p class="note">Svoriai, režimas ir pridėti tiražai išsaugomi naršyklėje. Atsarginei kopijai naudok eksportą.</p>
 </div>
 </div>
@@ -299,7 +299,7 @@ function setMode(mode){
 }
 
 function compute(){
- backtestResult=null;
+ backtestResult=null; if(typeof V17_CACHE!=='undefined'){V17_CACHE.trainingPoint.clear();V17_CACHE.modelPool.clear();V17_CACHE.weightKey=v17WeightKey();}
  DATA.sort((a,b)=>a.draw-b.draw);const nums=[...Array(48)].map((_,i)=>i+1),N=DATA.length,windows=[10,25,50,100,250,N],freq={};
  for(const w of windows){const c=Object.fromEntries(nums.map(n=>[n,0]));DATA.slice(-Math.min(w,N)).forEach(d=>d.nums.forEach(n=>c[n]++));freq[w]=c}
  const pos=Object.fromEntries(nums.map(n=>[n,[]]));DATA.forEach((d,i)=>d.nums.forEach(n=>pos[n].push(i)));
@@ -313,8 +313,8 @@ function compute(){
  analysis={nums,N,freq,delay,avgGap,maxGap,maps,scores,ranked,pc,tc,sums};
  recommendations=generateRecommendationsV16(DATA,analysis,20);
  renderAll();
- try{v1613RenderLive(v1613FinalPick())}
- catch(e){console.error(e);const q=$('#v1681Live');if(q)q.innerHTML='<b>V16.8.1 galutinio TOP 3 klaida:</b> '+e.message;}
+ const q=$('#v1681Live');
+ if(q)q.innerHTML='<b>V17.0.1 FAST:</b> pagrindinė analizė baigta. Sunkus 300–500 taškų robustus mokymas nebepaleidžiamas paslėptai po kiekvieno perskaičiavimo. V17 walk-forward testą paleisk atskiru mygtuku tik tada, kai jo reikia.';
 }
 function comboQuality(a){
  return comboQualityWith(a,analysis,DATA)
@@ -806,25 +806,35 @@ function v168CandidatePool(hist, model){
   let a=candidateSet(model,hist,90);
   return Array.isArray(a)?a.slice(0,90):[];
 }
+const V17_CACHE={trainingPoint:new Map(),modelPool:new Map(),weightKey:''};
+function v17WeightKey(){return Object.keys(weights).sort().map(k=>k+':'+weights[k]).join('|')}
+function v17EnsureCache(){const k=v17WeightKey();if(V17_CACHE.weightKey!==k){V17_CACHE.trainingPoint.clear();V17_CACHE.modelPool.clear();V17_CACHE.weightKey=k}}
+function v168TrainingPoint(i){
+  v17EnsureCache();
+  if(V17_CACHE.trainingPoint.has(i))return V17_CACHE.trainingPoint.get(i);
+  const hist=DATA.slice(0,i),m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m),actual=v168ActualNums(DATA[i]),rows=[];
+  for(let k=0;k<Math.min(pool.length,24);k++){
+    const x=v168Feat(pool[k],m);if(!x)continue;
+    const h=v168TicketNums(pool[k]).filter(n=>actual.includes(n)).length;rows.push({x,y:h>=3?1:0});
+  }
+  V17_CACHE.trainingPoint.set(i,rows);return rows;
+}
 function v168TrainingSamples(end){
   const samples=[],start=Math.max(100,end-420);
-  // Sparse chronological sampling keeps mobile execution safe.
-  for(let i=start;i<end;i+=3){
-    const hist=DATA.slice(0,i),m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m);
-    const actual=v168ActualNums(DATA[i]);
-    for(let k=0;k<Math.min(pool.length,24);k++){
-      const x=v168Feat(pool[k],m); if(!x) continue;
-      const h=v168TicketNums(pool[k]).filter(n=>actual.includes(n)).length;
-      samples.push({x,y:h>=3?1:0});
-    }
-  }
+  for(let i=start;i<end;i+=3)samples.push(...v168TrainingPoint(i));
   return samples;
+}
+function v17ModelPool(hist){
+  v17EnsureCache();const i=hist.length;
+  if(V17_CACHE.modelPool.has(i))return V17_CACHE.modelPool.get(i);
+  const m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m),o={m,pool};
+  V17_CACHE.modelPool.set(i,o);return o;
 }
 function v168Overlap(a,b){
   const A=new Set(v168TicketNums(a));return v168TicketNums(b).filter(n=>A.has(n)).length;
 }
-function v168Pick(hist, clf){
-  const m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m);
+function v168Pick(hist, clf, shared=null){
+  const mp=shared||v17ModelPool(hist),m=mp.m,pool=mp.pool;
   const ranked=pool.map((t,idx)=>{const x=v168Feat(t,m);return {t,p:x?v168Sigmoid(v168Dot(clf.w,x)):0,idx}})
                    .sort((a,b)=>b.p-a.p || a.idx-b.idx);
   const chosen=[];
@@ -1369,8 +1379,8 @@ function renderV1613RobustTest(r){
    Change: optimize all three tickets jointly instead of selecting them one-by-one.
    The current draw is never used when selecting its portfolio.
    ========================= */
-function v17RankedPool(hist,clf,limit=42){
-  const m=buildModelFor(hist,weights),pool=v168CandidatePool(hist,m);
+function v17RankedPool(hist,clf,limit=42,shared=null){
+  const mp=shared||v17ModelPool(hist),m=mp.m,pool=mp.pool;
   return pool.map((t,idx)=>{const x=v168Feat(t,m);return {t,p:x?v168Sigmoid(v168Dot(clf.w,x)):0,idx}})
     .sort((a,b)=>b.p-a.p || a.idx-b.idx).slice(0,limit);
 }
@@ -1386,8 +1396,8 @@ function v17PortfolioScore(sel){
   // 16-18 unique numbers are rewarded; >2 pair overlap is strongly penalized.
   return p*120 + minP*35 + unique*1.55 - sumOv*2.8 - Math.max(0,maxOv-2)*18;
 }
-function v17Pick(hist,clf){
-  const pool=v17RankedPool(hist,clf,42); if(pool.length<3)return v168Pick(hist,clf);
+function v17Pick(hist,clf,shared=null){
+  const pool=v17RankedPool(hist,clf,42,shared); if(pool.length<3)return v168Pick(hist,clf,shared);
   let best=null,bestScore=-1e9;
   // Joint search over a disciplined candidate field. On mobile this is ~11k triples max.
   for(let i=0;i<Math.min(18,pool.length-2);i++){
@@ -1401,7 +1411,7 @@ function v17Pick(hist,clf){
       }
     }
   }
-  return best||v168Pick(hist,clf);
+  return best||v168Pick(hist,clf,shared);
 }
 function runV17PortfolioTest(points=500){
   const maxPoints=Math.max(0,DATA.length-260),p=points==='max'?maxPoints:Math.min(Number(points)||500,maxPoints);
@@ -1411,10 +1421,29 @@ function runV17PortfolioTest(points=500){
     const hist=DATA.slice(0,i),actual=DATA[i];
     if(!clf || i-lastTrain>=12){clf=v168Train(v168TrainingSamples(i));lastTrain=i}
     if(!clf)continue;
-    const b=v168Pick(hist,clf).map(x=>x.t),v=v17Pick(hist,clf).map(x=>x.t);
+    const shared=v17ModelPool(hist);
+    const b=v168Pick(hist,clf,shared).map(x=>x.t),v=v17Pick(hist,clf,shared).map(x=>x.t);
     if(b.length<3||v.length<3)continue;
     v1691Add(B,v1691PortfolioMetrics(b,actual));v1691Add(V,v1691PortfolioMetrics(v,actual));
   }
+  return {B:v1691Finish(B),V:v1691Finish(V),points:V.n};
+}
+async function runV17PortfolioTestAsync(points=500,onProgress=null){
+  const maxPoints=Math.max(0,DATA.length-260),p=points==='max'?maxPoints:Math.min(Number(points)||500,maxPoints);
+  const start=Math.max(260,DATA.length-p),B=v1691Blank(),V=v1691Blank();
+  let clf=null,lastTrain=-999,done=0;
+  for(let i=start;i<DATA.length;i++){
+    const hist=DATA.slice(0,i),actual=DATA[i];
+    if(!clf || i-lastTrain>=12){clf=v168Train(v168TrainingSamples(i));lastTrain=i}
+    if(clf){
+      const shared=v17ModelPool(hist);
+      const b=v168Pick(hist,clf,shared).map(x=>x.t),v=v17Pick(hist,clf,shared).map(x=>x.t);
+      if(b.length>=3&&v.length>=3){v1691Add(B,v1691PortfolioMetrics(b,actual));v1691Add(V,v1691PortfolioMetrics(v,actual))}
+    }
+    done++;
+    if(done%8===0){if(onProgress)onProgress(done,p);await new Promise(r=>setTimeout(r,0))}
+  }
+  if(onProgress)onProgress(p,p);
   return {B:v1691Finish(B),V:v1691Finish(V),points:V.n};
 }
 function renderV17Test(r){
@@ -1603,8 +1632,8 @@ $('#addDrawBtn').onclick=()=>{
  previousRecommendations={forDraw:draw,recs:recommendations,date:new Date().toISOString()};localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));
  DATA.push({draw,date,nums:[...nums].sort((a,b)=>a-b),viking,status:'gerai',note:'Pridėta V15 naršyklėje'});const saved=save();if(!saved){DATA.pop();return fail('Tiražo nepavyko išsaugoti telefone. Patikrink, ar Safari nenaudojamas privačiame režime ir ar leidžiama svetainės saugykla.')}compute();status.className='status ok';status.textContent='Tiražas pridėtas ir išsaugotas telefone ✓ Visa analizė bei TOP 3 perskaičiuoti.';$$('.newNum').forEach(x=>x.value='');$('#newViking').value='';renderPerformance()
 };
-$('#runV17Test').onclick=()=>{const b=$('#runV17Test'),e=$('#v169PortfolioCompare'),sel=$('#v1613Points'),pts=sel?sel.value:'500';b.disabled=true;b.textContent='V17 skaičiuoja…';e.innerHTML='<div class="coverage-note">V17 vykdo portfolio-first walk-forward testą. Sprendimas kiekvienam tiražui sudaromas tik iš ankstesnės istorijos.</div>';setTimeout(()=>{try{renderV17Test(runV17PortfolioTest(pts))}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V17 testo klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V17 PORTFELIO testas'}},50)};
-$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V17',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V17_backup.json';a.click()};
+$('#runV17Test').onclick=async()=>{const b=$('#runV17Test'),e=$('#v169PortfolioCompare'),sel=$('#v1613Points'),pts=sel?sel.value:'500';b.disabled=true;b.textContent='V17 FAST skaičiuoja…';e.innerHTML='<div class="coverage-note">V17.0.1 FAST vykdo portfolio-first walk-forward testą. Skaičiavimas talpinamas į atmintį ir kas 8 taškus trumpam atiduoda valdymą Safari, todėl telefonas neturi visiškai užšalti.</div>';try{const r=await runV17PortfolioTestAsync(pts,(d,t)=>{b.textContent=`V17 FAST ${d}/${t}`});renderV17Test(r)}catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V17 testo klaida: '+x.message+'</div>'}finally{b.disabled=false;b.textContent='V17 PORTFOLIO testas'}};
+$('#exportData').onclick=()=>{const blob=new Blob([JSON.stringify({version:'V17.0.1 FAST',data:DATA,weights,analysisMode,previousRecommendations},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vikinglotto_V17.0.1_FAST_backup.json';a.click()};
 $('#importData').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);DATA=x.data||x;weights=x.weights||weights;analysisMode=x.analysisMode||'custom';previousRecommendations=x.previousRecommendations||null;save();localStorage.setItem('vikingV13PreviousRecs',JSON.stringify(previousRecommendations));compute()}catch{alert('Nepavyko perskaityti failo.')}};r.readAsText(f)};
 $('#resetData').onclick=()=>{if(confirm('Ar tikrai atkurti pradinį archyvą?')){DATA=structuredClone(BASE_DATA);previousRecommendations=null;localStorage.removeItem('vikingV13Data');localStorage.removeItem('vikingV12Data');localStorage.removeItem('vikingV13PreviousRecs');localStorage.removeItem('vikingV12PreviousRecs');compute()}};
 $('#applyWeights').onclick=()=>{
