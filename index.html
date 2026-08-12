@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vikinglotto analizė V18.1 HARD COVERAGE</title>
+<title>Vikinglotto analizė V18.2 SMART SPLIT</title>
 <style>
 :root{
  --bg:#0b1220;--panel:#111827;--panel2:#172033;--text:#e5e7eb;--muted:#94a3b8;
@@ -72,8 +72,8 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 </head>
 <body>
 <header><div class="wrap">
-<h1>Vikinglotto analizė V18.1 HARD COVERAGE</h1>
-<div class="subtitle">V18.1 HARD COVERAGE: 18/18 unikalumas dabar yra privaloma sąlyga, ne pageidavimas. Pirmiausia atrenkamas 18 skaičių laukas, tada jis padalijamas į 3 nesidubliuojančius ir subalansuotus bilietus.</div>
+<h1>Vikinglotto analizė V18.2 SMART SPLIT</h1>
+<div class="subtitle">V18.2 SMART SPLIT: 18/18 unikalumas lieka privalomas. Naujas tikslas – ne tik padengti 18 skaičių, bet ir protingiau koncentruoti stipriausius istorinius signalus į vieną ar du bilietus, kad būtų didinamas 3+ viename biliete rodiklis.</div>
 <div class="tabs">
 <button class="tab active" data-tab="dashboard">Apžvalga</button>
 <button class="tab" data-tab="adddraw">Pridėti tiražą</button>
@@ -141,7 +141,7 @@ canvas{width:100%;height:320px;background:#0b1220;border-radius:12px}
 <div class="rec-grid" id="top3Full"></div>
 <p class="note" style="margin-top:14px">Visos galiojančios kombinacijos turi vienodą matematinę iškritimo tikimybę. Šis balas tik rodo, kiek kombinacija atitinka pasirinktus istorinius požymius.</p>
 </div>
-<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8.1 3+ klasifikatorius</button><button id="runV169PortfolioTest">V16.12 legacy testas (300)</button><select id="v1613Points" title="V16.13 testo ilgis"><option value="300">300 tiražų</option><option value="500" selected>500 tiražų</option><option value="800">800 tiražų</option><option value="max">MAX istorija</option></select><button id="runV1613Robust">V16.13 ROBUST testas</button><button id="runV17Test" class="primary">V17 PORTFELIO testas</button><button id="runV181HardTest" class="primary">V18.1 HARD COVERAGE testas</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div><div id="v169PortfolioCompare" style="margin-top:12px"></div><div id="v181HardCompare" style="margin-top:12px"></div></div>
+<div class="card full"><div class="controls"><button id="runAnalysis" class="primary">Paleisti analizę ir TOP 3</button></div><h3>V16 optimizavimo būsena</h3><div id="v16OptimizerStatus" class="coverage-note"><b>V16.6 principas:</b> V16.3 TOP 3 portfelio algoritmas nekeičiamas. Tikriname jo stabilumą nepriklausomuose laiko segmentuose. Pirminis tikslas išlieka: parinkti ne tris panašius „geriausius“ bilietus, o 3 bilietų portfelį, kuris istoriniame walk-forward teste maksimalizuoja bendrą realių skaičių padengimą ir 2+/3+ pataikymus. Jeigu patikimo pranašumo prieš RANDOM nėra, programa tai aiškiai parodo.</div></div><div class="card full"><h3>V16 istorinis testas: optimizuotas portfelis prieš atsitiktinę kontrolę</h3><p class="note">Walk-forward testas kiekviename istoriniame taške naudoja tik tuo metu žinotus tiražus. V16.3 tuos pačius realius tiražus tikrina dviem būdais: TOP 3 modelio bilietais ir atsitiktiniais 3 bilietais su tokiu pačiu tarpusavio dubliavimo apribojimu. Atsitiktinė kontrolė kartojama kelis kartus, todėl palyginimas stabilesnis.</p><div id="backtestCompare"></div><div class="coverage-note" id="backtestNote"></div><div class="controls" style="margin-top:12px"><button id="rerunBacktest">Perskaičiuoti 300 tiražų testą</button><button id="runValidation">V16.4 kelių langų validacija</button><button id="runBootstrap">V16.5 statistinis patikimumas</button><button id="runSegments">V16.6 segmentų validacija</button><button id="runPrizeFocus">V16.7.1 3+ kontrolė</button><button id="runV168">V16.8.1 3+ klasifikatorius</button><button id="runV169PortfolioTest">V16.12 legacy testas (300)</button><select id="v1613Points" title="V16.13 testo ilgis"><option value="300">300 tiražų</option><option value="500" selected>500 tiražų</option><option value="800">800 tiražų</option><option value="max">MAX istorija</option></select><button id="runV1613Robust">V16.13 ROBUST testas</button><button id="runV17Test" class="primary">V17 PORTFELIO testas</button><button id="runV181HardTest" class="primary">V18.2 SMART SPLIT testas</button></div><div id="validationCompare" style="margin-top:12px"></div><div id="bootstrapCompare" style="margin-top:12px"></div><div id="segmentCompare" style="margin-top:12px"></div><div id="prizeFocusCompare" style="margin-top:12px"></div><div id="v168Compare" style="margin-top:12px"></div><div id="v169PortfolioCompare" style="margin-top:12px"></div><div id="v181HardCompare" style="margin-top:12px"></div></div>
 <div class="card half"><h3>Modelio aiškumo indikatorius</h3><div class="value" id="confidenceFull"></div><div class="bar"><span id="confidenceBar"></span></div></div>
 <div class="card half"><h3>TOP Viking skaičiai</h3><div id="vikingRanking"></div></div>
 </div>
@@ -1465,7 +1465,7 @@ function renderV17Test(r){
    V18 pirmiausia siekia 18 skirtingų skaičių per 3 bilietus (0 tarpusavio dubliavimo),
    o V16.8.1 3+ klasifikatoriaus balą naudoja tik kaip antrinį reitingavimo signalą.
    ========================= */
-function v18Pick(hist,clf,shared=null){
+function v181Pick(hist,clf,shared=null){
   const pool=v17RankedPool(hist,clf,56,shared); if(pool.length<3)return v17Pick(hist,clf,shared);
   let best=null,bestScore=-1e9;
   const nFirst=Math.min(16,pool.length-2);
@@ -1498,6 +1498,51 @@ function v18Pick(hist,clf,shared=null){
     }
   }
   return best||v17Pick(hist,clf,shared);
+}
+function v182PairMap(hist){
+  const map=new Map(), recent=(hist||[]).slice(-180);
+  for(let z=0;z<recent.length;z++){
+    const ns=v168ActualNums(recent[z]).slice(0,6), age=(z+1)/Math.max(1,recent.length), w=.55+.45*age;
+    for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){
+      const a=Math.min(ns[i],ns[j]),b=Math.max(ns[i],ns[j]),k=a+'-'+b;
+      map.set(k,(map.get(k)||0)+w);
+    }
+  }
+  return map;
+}
+function v182Cohesion(t,pairs){
+  const ns=v168TicketNums(t);let z=0,c=0;
+  for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){
+    const a=Math.min(ns[i],ns[j]),b=Math.max(ns[i],ns[j]);z+=(pairs.get(a+'-'+b)||0);c++;
+  }
+  return c?z/c:0;
+}
+function v18Pick(hist,clf,shared=null){
+  const pool=v17RankedPool(hist,clf,72,shared); if(pool.length<3)return v181Pick(hist,clf,shared);
+  const pairs=v182PairMap(hist);
+  const enriched=pool.map(r=>({...r,coh:v182Cohesion(r.t,pairs)}));
+  let best=null,bestScore=-1e9;
+  const nFirst=Math.min(22,enriched.length-2);
+  // V18.2 SMART SPLIT: 18/18 lieka kieta sąlyga, bet nebeaukojame stipriausio bilieto dėl lygybės.
+  // Vertiname visą 18 skaičių lauką IR tai, ar bent vienas iš 3 bilietų turi stiprų 3+ signalą.
+  for(let i=0;i<nFirst;i++){
+    for(let j=i+1;j<enriched.length-1;j++){
+      if(v168Overlap(enriched[i].t,enriched[j].t)!==0)continue;
+      for(let k=j+1;k<enriched.length;k++){
+        if(v168Overlap(enriched[i].t,enriched[k].t)!==0||v168Overlap(enriched[j].t,enriched[k].t)!==0)continue;
+        const sel=[enriched[i],enriched[j],enriched[k]];
+        const ps=sel.map(r=>r.p).sort((a,b)=>b-a), total=ps[0]+ps[1]+ps[2];
+        const qs=sel.map(r=>Number(r.t.score||0)).sort((a,b)=>b-a);
+        const cs=sel.map(r=>r.coh).sort((a,b)=>b-a);
+        // SMART SPLIT tikslas: išlaikyti bendrą lauko kokybę, bet koncentruoti geriausius
+        // tarpusavio signalus viename/du bilietuose, nes prizui svarbu 3+ viename biliete.
+        const sc=total*92 + ps[0]*58 + ps[1]*18 + qs[0]*.16 + (qs[0]+qs[1]+qs[2])/3*.06 + cs[0]*1.8 + cs[1]*.45;
+        if(sc>bestScore){bestScore=sc;best=sel}
+      }
+    }
+  }
+  if(best)return best;
+  return v181Pick(hist,clf,shared);
 }
 function v18FinalPick(){
   if(!analysis)throw new Error('Pirmiausia reikia paleisti pagrindinę analizę.');
@@ -1926,11 +1971,11 @@ function v18FinalPick(){
 function v18RecCard(r,i){
   const nums=v168TicketNums(r.t),p=(100*r.p).toFixed(1);
   return `<div class="rec ${i===0?'gold':i===1?'silver':'bronze'}">
-    <div class="rank">${['🥇 V18.1 – 1 variantas','🥈 V18.1 – 2 variantas','🥉 V18.1 – 3 variantas'][i]}</div>
+    <div class="rank">${['🥇 V18.2 – 1 variantas','🥈 V18.2 – 2 variantas','🥉 V18.2 – 3 variantas'][i]}</div>
     <div class="nums" style="margin:14px 0">${balls(nums)}</div>
     <div class="score">${Number(r.t.score||0).toFixed(1)} modelio balo</div>
     <div class="why">
-      <span class="tag">✓ HARD COVERAGE</span>
+      <span class="tag">✓ SMART SPLIT</span>
       <span class="tag">3+ reitingas ${p}%</span>
       <span class="tag">6 unikalūs šiame biliete</span>
     </div>
@@ -1940,7 +1985,7 @@ function v18RecCard(r,i){
 function v18RenderLive(res){
   const box=$('#v1681Live'),out=$('#v1681Top3');if(!box||!out)return;
   const ok=res.unique===18 && (!res.duplicates || res.duplicates.length===0);
-  box.innerHTML=`<b>V18.1 HARD COVERAGE ${ok?'PATVIRTINTAS':'KLAIDA'}.</b>
+  box.innerHTML=`<b>V18.2 SMART SPLIT ${ok?'PATVIRTINTAS':'KLAIDA'}.</b>
     Portfelyje <b>${res.unique}/18</b> unikalių skaičių.
     ${ok?'<b style="color:#4ade80">Dublių tarp 3 bilietų nėra.</b>':
          '<b style="color:#f87171">Aptiktas dubliavimas — šio portfelio nenaudoti.</b>'}
@@ -1973,7 +2018,7 @@ async function runV181HardCoverageTestAsync(points=300,onProgress=null){
     if(!clf||i-lastTrain>=12){clf=v168Train(v168TrainingSamples(i));lastTrain=i}
     if(clf){
       const shared=v17ModelPool(hist);
-      const a=v17Pick(hist,clf,shared).map(x=>x.t), b=v18Pick(hist,clf,shared).map(x=>x.t);
+      const a=v181Pick(hist,clf,shared).map(x=>x.t), b=v18Pick(hist,clf,shared).map(x=>x.t);
       if(a.length>=3&&b.length>=3){v181HardAdd(V17,a,actual);v181HardAdd(V181,b,actual)}
     }
     done++; if(done%8===0){if(onProgress)onProgress(done,p);await new Promise(r=>setTimeout(r,0))}
@@ -1983,17 +2028,17 @@ async function runV181HardCoverageTestAsync(points=300,onProgress=null){
 function renderV181HardTest(r){
   const el=$('#v181HardCompare');if(!el)return;const a=r.V17,b=r.V181;
   const d3=b.best3Pct-a.best3Pct,d4=b.best4Pct-a.best4Pct,df=b.avgFieldHits-a.avgFieldHits;
-  const verdict=b.hard18Pct===100?(d3>0?'V18.1 18/18 IŠLAIKYTAS IR 3+ PAGERĖJO':d3===0?'V18.1 18/18 IŠLAIKYTAS, 3+ NEPAKITO':'V18.1 18/18 IŠLAIKYTAS, BET 3+ BLOGĖJO'):'KLAIDA: 18/18 NEBUVO IŠLAIKYTAS VISUOSE TAŠKUOSE';
+  const verdict=b.hard18Pct===100?(d3>0?'V18.2 18/18 IŠLAIKYTAS IR 3+ PAGERĖJO':d3===0?'V18.2 18/18 IŠLAIKYTAS, 3+ NEPAKITO':'V18.2 18/18 IŠLAIKYTAS, BET 3+ BLOGĖJO'):'KLAIDA: 18/18 NEBUVO IŠLAIKYTAS VISUOSE TAŠKUOSE';
   const vc=b.hard18Pct!==100?'#f87171':d3>0?'#4ade80':d3===0?'#fbbf24':'#f87171';
   const row=(name,x)=>`<tr><td><b>${name}</b></td><td>${x.hard18Pct.toFixed(1)}%</td><td>${x.avgFieldHits.toFixed(3)}</td><td>${x.field3Pct.toFixed(2)}%</td><td>${x.field4Pct.toFixed(2)}%</td><td>${x.best3Pct.toFixed(2)}%</td><td>${x.best4Pct.toFixed(2)}%</td><td>${x.best5Pct.toFixed(3)}%</td><td>${x.best6Pct.toFixed(3)}%</td></tr>`;
-  el.innerHTML=`<div class="coverage-note"><b>V18.1 HARD COVERAGE – ${r.points} tiražų walk-forward testas.</b><div style="font-size:22px;font-weight:850;margin-top:10px;color:${vc}">${verdict}</div><div class="note">Kiekviename istoriniame taške modelis mato tik ankstesnius tiražus. V18.1 privalo sudaryti 3 bilietus be jokio skaičių dubliavimo (18/18). Papildomai matuojama, kiek iš 6 realiai iškritusių skaičių pateko į bendrą 18 skaičių lauką ir kiek jų susikaupė geriausiame viename biliete.</div></div><div class="scroll"><table><thead><tr><th>Strategija</th><th>18/18</th><th>Vid. pataikyta 18 lauke</th><th>18 lauke 3+</th><th>18 lauke 4+</th><th>Geriausias bilietas 3+</th><th>Geriausias 4+</th><th>5+</th><th>6</th></tr></thead><tbody>${row('V17 PORTFELIS',a)}${row('V18.1 HARD',b)}</tbody></table></div><div class="coverage-note" style="margin-top:10px"><b>V18.1 prieš V17:</b> geriausio bilieto 3+ <b>${d3>=0?'+':''}${d3.toFixed(2)} p.p.</b>, 4+ <b>${d4>=0?'+':''}${d4.toFixed(2)} p.p.</b>, vidutinis pataikymas bendrame 18 skaičių lauke <b>${df>=0?'+':''}${df.toFixed(3)}</b>.</div>`;
+  el.innerHTML=`<div class="coverage-note"><b>V18.2 SMART SPLIT – ${r.points} tiražų walk-forward testas.</b><div style="font-size:22px;font-weight:850;margin-top:10px;color:${vc}">${verdict}</div><div class="note">Kiekviename istoriniame taške modelis mato tik ankstesnius tiražus. V18.1 privalo sudaryti 3 bilietus be jokio skaičių dubliavimo (18/18). Papildomai matuojama, kiek iš 6 realiai iškritusių skaičių pateko į bendrą 18 skaičių lauką ir kiek jų susikaupė geriausiame viename biliete.</div></div><div class="scroll"><table><thead><tr><th>Strategija</th><th>18/18</th><th>Vid. pataikyta 18 lauke</th><th>18 lauke 3+</th><th>18 lauke 4+</th><th>Geriausias bilietas 3+</th><th>Geriausias 4+</th><th>5+</th><th>6</th></tr></thead><tbody>${row('V18.1 HARD',a)}${row('V18.2 SMART',b)}</tbody></table></div><div class="coverage-note" style="margin-top:10px"><b>V18.2 prieš V18.1:</b> geriausio bilieto 3+ <b>${d3>=0?'+':''}${d3.toFixed(2)} p.p.</b>, 4+ <b>${d4>=0?'+':''}${d4.toFixed(2)} p.p.</b>, vidutinis pataikymas bendrame 18 skaičių lauke <b>${df>=0?'+':''}${df.toFixed(3)}</b>.</div>`;
 }
 $('#runV181HardTest').onclick=async()=>{
   const b=$('#runV181HardTest'),e=$('#v181HardCompare'),sel=$('#v1613Points'),pts=sel?sel.value:'300';
-  b.disabled=true;b.textContent='V18.1 testuoja…';e.innerHTML='<div class="coverage-note">V18.1 HARD COVERAGE walk-forward testas vykdomas…</div>';
+  b.disabled=true;b.textContent='V18.2 testuoja…';e.innerHTML='<div class="coverage-note">V18.2 SMART SPLIT walk-forward testas vykdomas…</div>';
   try{const r=await runV181HardCoverageTestAsync(pts,(d,t)=>{b.textContent=`V18.1 ${d}/${t}…`});renderV181HardTest(r)}
-  catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V18.1 testo klaida: '+x.message+'</div>'}
-  finally{b.disabled=false;b.textContent='V18.1 HARD COVERAGE testas'}
+  catch(x){console.error(x);e.innerHTML='<div class="coverage-note">V18.2 testo klaida: '+x.message+'</div>'}
+  finally{b.disabled=false;b.textContent='V18.2 SMART SPLIT testas'}
 };
 
 </script>
